@@ -191,6 +191,7 @@ export interface SerializedLabel {
     sublabels?: SerializedLabel[];
     has_parent?: boolean;
     attributes: SerializedAttribute[];
+    prompt?: string;
 }
 
 export interface SerializedAbout {

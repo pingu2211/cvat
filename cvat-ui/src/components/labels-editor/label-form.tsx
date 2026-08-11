@@ -84,6 +84,7 @@ export default class LabelForm extends React.Component<Props> {
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
+            prompt: values.prompt || '',
             type: values.type || label?.type || LabelType.ANY,
             attributes: (values.attributes || []).map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
@@ -562,6 +563,20 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
+    private renderLabelPromptInput(): JSX.Element {
+        return (
+            <CVATTooltip title='A free-text prompt describing this label, used by text-prompt-driven models (e.g. SAM3) to detect matching objects'>
+                <Form.Item name='prompt'>
+                    <Input
+                        placeholder='Prompt (optional)'
+                        className='cvat-label-prompt-input'
+                        autoComplete='off'
+                    />
+                </Form.Item>
+            </CVATTooltip>
+        );
+    }
+
     private renderNewAttributeButton(): JSX.Element {
         return (
             <Form.Item>
@@ -670,6 +685,7 @@ export default class LabelForm extends React.Component<Props> {
                     name: label?.name || '',
                     type: label?.type || (isSkeleton ? LabelType.SKELETON : LabelType.ANY),
                     color: label?.color || undefined,
+                    prompt: label?.prompt || '',
                     attributes: (label?.attributes || []).map((attr) => ({
                         id: attr.id,
                         name: attr.name,
@@ -693,6 +709,11 @@ export default class LabelForm extends React.Component<Props> {
                     </Col>
                     <Col offset={1}>
                         {this.renderNewAttributeButton()}
+                    </Col>
+                </Row>
+                <Row justify='start' align='top'>
+                    <Col span={12}>
+                        {this.renderLabelPromptInput()}
                     </Col>
                 </Row>
                 <Row justify='start' align='top'>
