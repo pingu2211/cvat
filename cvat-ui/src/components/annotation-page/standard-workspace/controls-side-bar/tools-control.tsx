@@ -22,6 +22,7 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Switch from 'antd/lib/switch';
+import Input from 'antd/lib/input';
 import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
@@ -159,6 +160,7 @@ interface State {
     activeInteractor: MLModel | null;
     activeLabelID: number | null;
     activeTracker: MLModel | null;
+    textPrompt: string;
     startInteractingWithBox: boolean;
     convertMasksToPolygons: boolean;
     trackedShapes: TrackedShape[];
@@ -255,6 +257,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 neg_points: number[][];
                 pos_points: number[][];
                 obj_bbox: number[][];
+                text_prompts?: Record<string, string>;
             };
         } | null;
         closeFetchingMessage: (() => void) | null;
@@ -272,6 +275,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: supportedTrackers.length ? supportedTrackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id as number : null,
+            textPrompt: props.labels.length ? (props.labels[0].prompt || '') : '',
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             thresholdValue: 0.5,
             trackedShapes: [],
@@ -590,8 +594,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private onInteraction = (e: Event): void => {
-        const { frame, isActivated } = this.props;
-        const { activeInteractor, interactorRegionOfInterest } = this.state;
+        const { frame, isActivated, labels } = this.props;
+        const {
+            activeInteractor, activeLabelID, interactorRegionOfInterest, textPrompt,
+        } = this.state;
 
         if (!isActivated) {
             return;
@@ -607,6 +613,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
         const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
 
+        const activeLabel = labels.find((label): boolean => label.id === activeLabelID);
+        const textPromptSupported = interactor?.params?.canvas?.supportsTextPrompt;
+
         this.interaction.latestRequest = {
             interactor,
             data: {
@@ -615,6 +624,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 pos_points: posPoints,
                 neg_points: negPoints,
                 ...(interactorRegionOfInterest ? { roi: interactorRegionOfInterest } : {}),
+                ...(textPromptSupported && textPrompt && activeLabel ? {
+                    text_prompts: { [activeLabel.name]: textPrompt },
+                } : {}),
             },
         };
 
@@ -1197,7 +1209,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             style={{ width: '100%' }}
                             labels={labels}
                             value={activeLabelID}
-                            onChange={(value: any) => this.setState({ activeLabelID: value.id })}
+                            onChange={(value: any) => this.setState({
+                                activeLabelID: value.id,
+                                textPrompt: value.prompt || '',
+                            })}
                         />
                     </Col>
                 </Row>
@@ -1282,7 +1297,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
-            startInteractingWithBox, convertMasksToPolygons,
+            startInteractingWithBox, convertMasksToPolygons, textPrompt,
         } = this.state;
 
         if (!interactors.length) {
@@ -1299,6 +1314,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const minNegVertices = activeInteractor?.params?.canvas?.minNegVertices ?? -1;
         const renderStartWithBox = activeInteractor?.params?.canvas?.startWithBoxOptional ?? false;
+        const renderTextPrompt = activeInteractor?.params?.canvas?.supportsTextPrompt ?? false;
 
         const renderedInteractorExtras = interactorExtras
             .sort((a, b) => a.data.weight - b.data.weight)
@@ -1351,6 +1367,22 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 </Row>
                 <div className='cvat-tools-interactor-setups'>
                     {allowROI && this.renderROIControls()}
+                    {renderTextPrompt && (
+                        <Row justify='start'>
+                            <Col span={24}>
+                                <CVATTooltip title='A text prompt describing the object to segment'>
+                                    <Input
+                                        placeholder='Text prompt (optional)'
+                                        className='cvat-tools-interactor-text-prompt-input'
+                                        value={textPrompt}
+                                        onChange={(event) => {
+                                            this.setState({ textPrompt: event.target.value });
+                                        }}
+                                    />
+                                </CVATTooltip>
+                            </Col>
+                        </Row>
+                    )}
                     <div>
                         <Switch
                             checked={convertMasksToPolygons}
