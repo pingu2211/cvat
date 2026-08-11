@@ -22,6 +22,7 @@ import {
 import { type Canvas } from 'cvat-canvas-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
+import TextPromptMapper from './text-prompt-mapper';
 import RegionOfInterestInputComponent from './region-of-interest-input';
 
 export type RegionOfInterest = NonNullable<AnnotateTaskRequestBody['roi']> | null;
@@ -46,7 +47,8 @@ type ServerMapping = Record<string, {
 
 export interface AnnotateTaskRequestBody {
     type: 'annotate_task';
-    mapping: ServerMapping;
+    mapping?: ServerMapping;
+    text_prompts?: Record<string, string>;
     cleanup: boolean;
     conv_mask_to_poly: boolean;
     threshold?: number;
@@ -83,6 +85,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
     const [mapping, setMapping] = useState<FullMapping>([]);
+    const [textPromptMapping, setTextPromptMapping] = useState<Record<string, string>>({});
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
     const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
@@ -92,17 +95,24 @@ function DetectorRunner(props: Props): JSX.Element {
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
+    const isPromptDriven = isDetector && !!model.params.canvas.supportsTextPrompt;
     const showROI = isDetector && dimension === DimensionType.DIMENSION_2D;
     const convertMasks2PolygonVisible = isDetector &&
         [LabelType.ANY, LabelType.MASK].includes(model.returnType);
 
-    const buttonEnabled = model && (isReId || (isDetector && mapping.length));
+    const buttonEnabled = model && (
+        isReId ||
+        (isDetector && (isPromptDriven ?
+            Object.values(textPromptMapping).some((prompt) => !!prompt.trim()) :
+            mapping.length))
+    );
 
     useEffect(() => {
         const converted = labels.map((label) => ({
             name: label.name,
             type: label.type,
             color: label.color,
+            prompt: label.prompt,
             attributes: label.attributes.map((attr) => ({
                 name: attr.name,
                 input_type: attr.inputType,
@@ -123,7 +133,8 @@ function DetectorRunner(props: Props): JSX.Element {
         setTaskLabels(converted);
         if (model) {
             setModelLabels(model.labels);
-            if (!model.labels.length && model.kind !== ModelKind.REID) {
+            const promptDriven = model.kind === ModelKind.DETECTOR && !!model.params.canvas.supportsTextPrompt;
+            if (!model.labels.length && model.kind !== ModelKind.REID && !promptDriven) {
                 notification.warning({ message: 'This model does not have specified labels' });
             }
         } else {
@@ -166,7 +177,22 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {isDetector && (
+            {isDetector && isPromptDriven && (
+                <div>
+                    <div className='cvat-detector-runner-mapping-header'>
+                        <Text>Setup a text prompt for each label to detect</Text>
+                        <CVATTooltip title='This model has no fixed label set of its own: it detects, for each task label with a prompt, every object instance matching that prompt. Labels with an empty prompt are skipped'>
+                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                        </CVATTooltip>
+                    </div>
+                    <TextPromptMapper
+                        key={modelID} // rerender when model switched
+                        onUpdateMapping={(_mapping: Record<string, string>) => setTextPromptMapping(_mapping)}
+                        taskLabels={taskLabels}
+                    />
+                </div>
+            )}
+            {isDetector && !isPromptDriven && (
                 <div>
                     <div className='cvat-detector-runner-mapping-header'>
                         <Text>Setup mapping between labels and attributes</Text>
@@ -284,13 +310,18 @@ function DetectorRunner(props: Props): JSX.Element {
                         type='primary'
                         onClick={() => {
                             if (!model) return;
-                            const serverMapping = convertMappingToServer(mapping);
                             if (model.kind === ModelKind.DETECTOR) {
                                 const body: AnnotateTaskRequestBody = {
                                     type: 'annotate_task',
-                                    mapping: serverMapping,
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
+                                    ...(isPromptDriven ? {
+                                        text_prompts: Object.fromEntries(
+                                            Object.entries(textPromptMapping).filter(([, prompt]) => !!prompt.trim()),
+                                        ),
+                                    } : {
+                                        mapping: convertMappingToServer(mapping),
+                                    }),
                                     ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
                                     ...(regionOfInterest ? { roi: regionOfInterest } : {}),
                                 };

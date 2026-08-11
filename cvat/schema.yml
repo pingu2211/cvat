@@ -8208,6 +8208,13 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
+        text_prompts:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 1024
+          description: 'A { task_label_name: prompt_text } mapping, for text-prompt-driven
+            detectors (e.g. SAM3) that have no fixed label set of their own'
         roi:
           type: array
           items:
