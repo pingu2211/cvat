@@ -23,6 +23,7 @@ export interface LabelInterface {
     name: Label['name'];
     type: Label['type'];
     color?: Label['color'];
+    prompt?: Label['prompt'];
     attributes?: AttributeInterface[];
     sublabels?: Omit<LabelInterface, 'sublabels'>[];
 }

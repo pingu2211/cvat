@@ -350,6 +350,21 @@ class LambdaFunction:
         model_labels = self.labels
         task_labels = db_task.get_labels(prefetch=True)
 
+        # Text-prompt-driven detectors (e.g. SAM3) have no fixed label set of their own:
+        # instead of mapping "model label" -> "task label" by name, the caller supplies a
+        # { task_label_name: prompt_text } mapping directly, and the function is expected
+        # to return results already labeled with the task's own label names.
+        text_prompts = data.get("text_prompts") if self.kind == FunctionKind.DETECTOR else None
+        prompt_driven = bool(self.supports_text_prompt and text_prompts)
+        if prompt_driven:
+            task_label_names = {label.name for label in task_labels}
+            unknown_labels = set(text_prompts) - task_label_names
+            if unknown_labels:
+                raise ValidationError(
+                    "Invalid text_prompts. Unknown task label(s): "
+                    + ", ".join(sorted(unknown_labels))
+                )
+
         def labels_compatible(model_label: dict, task_label: Label) -> bool:
             model_type = model_label["type"]
             db_type = task_label.type
@@ -462,12 +477,17 @@ class LambdaFunction:
                         mapping_item["sublabels"], md_label["sublabels"], db_label.sublabels.all()
                     )
 
-        if not mapping:
+        if prompt_driven:
+            # No model-label <-> task-label mapping applies here (see above); results are
+            # matched against task_label_names directly when the response is processed.
+            pass
+        elif not mapping:
             mapping = make_default_mapping(model_labels, task_labels)
         else:
             validate_labels_mapping(mapping, self.labels, task_labels)
 
-        mapping = update_mapping(mapping, self.labels, task_labels)
+        if not prompt_driven:
+            mapping = update_mapping(mapping, self.labels, task_labels)
 
         # Check job frame boundaries
         if db_job:
@@ -503,6 +523,8 @@ class LambdaFunction:
 
         if self.kind == FunctionKind.DETECTOR:
             payload.update({"image": image})
+            if prompt_driven:
+                payload.update({"text_prompts": text_prompts})
         elif self.kind == FunctionKind.INTERACTOR:
             point_dx = -roi["xtl"] if roi else 0
             point_dy = -roi["ytl"] if roi else 0
@@ -649,31 +671,41 @@ class LambdaFunction:
         if self.kind == FunctionKind.DETECTOR:
             response_filtered = []
 
-            for item in response:
-                item_label = item["label"]
-                if item_label not in mapping:
-                    continue
-                db_label = mapping[item_label]["db_label"]
-                item["label"] = db_label.name
-                item["attributes"] = transform_attributes(
-                    item.get("attributes", {}),
-                    mapping[item_label]["attributes"],
-                    db_label.attributespec_set.values(),
-                )
+            if prompt_driven:
+                # The function was given task label names directly (via text_prompts) and
+                # is expected to return results already labeled with those same names; there
+                # is no model-label mapping or attribute mapping to apply.
+                for item in response:
+                    if item["label"] not in text_prompts:
+                        continue
+                    item["attributes"] = []
+                    response_filtered.append(item)
+            else:
+                for item in response:
+                    item_label = item["label"]
+                    if item_label not in mapping:
+                        continue
+                    db_label = mapping[item_label]["db_label"]
+                    item["label"] = db_label.name
+                    item["attributes"] = transform_attributes(
+                        item.get("attributes", {}),
+                        mapping[item_label]["attributes"],
+                        db_label.attributespec_set.values(),
+                    )
 
-                if "elements" in item:
-                    sublabels = mapping[item_label]["sublabels"]
-                    item["elements"] = [x for x in item["elements"] if x["label"] in sublabels]
-                    for element in item["elements"]:
-                        element_label = element["label"]
-                        db_label = sublabels[element_label]["db_label"]
-                        element["label"] = db_label.name
-                        element["attributes"] = transform_attributes(
-                            element.get("attributes", {}),
-                            sublabels[element_label]["attributes"],
-                            db_label.attributespec_set.values(),
-                        )
-                response_filtered.append(item)
+                    if "elements" in item:
+                        sublabels = mapping[item_label]["sublabels"]
+                        item["elements"] = [x for x in item["elements"] if x["label"] in sublabels]
+                        for element in item["elements"]:
+                            element_label = element["label"]
+                            db_label = sublabels[element_label]["db_label"]
+                            element["label"] = db_label.name
+                            element["attributes"] = transform_attributes(
+                                element.get("attributes", {}),
+                                sublabels[element_label]["attributes"],
+                                db_label.attributespec_set.values(),
+                            )
+                    response_filtered.append(item)
 
             response = converter.convert(
                 conv_mask_to_poly=data.get("conv_mask_to_poly", False),
@@ -763,6 +795,7 @@ class LambdaQueue:
         *,
         job: int | None = None,
         roi: list | None = None,
+        text_prompts: dict[str, str] | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -812,6 +845,7 @@ class LambdaQueue:
                         "mapping": mapping,
                         "max_distance": max_distance,
                         "roi": roi,
+                        "text_prompts": text_prompts,
                     },
                     depends_on=define_dependent_job(queue, user_id),
                     result_ttl=self.RESULT_TTL.total_seconds(),
@@ -1076,6 +1110,7 @@ class LambdaJob:
         *,
         db_job: Job | None = None,
         roi: list | None = None,
+        text_prompts: dict[str, str] | None = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
@@ -1096,6 +1131,7 @@ class LambdaJob:
                     "threshold": threshold,
                     "conv_mask_to_poly": conv_mask_to_poly,
                     "roi": roi,
+                    "text_prompts": text_prompts,
                 },
                 converter=converter,
             )
@@ -1272,6 +1308,7 @@ class LambdaJob:
                 kwargs.get("conv_mask_to_poly"),
                 db_job=db_job,
                 roi=kwargs.get("roi"),
+                text_prompts=kwargs.get("text_prompts"),
             )
         elif function.kind == FunctionKind.REID:
             cls._call_reid(
@@ -1502,6 +1539,7 @@ class RequestViewSet(viewsets.ViewSet):
             cleanup = request_data.get("cleanup", False)
             conv_mask_to_poly = request_data.get("conv_mask_to_poly", False)
             mapping = request_data.get("mapping")
+            text_prompts = request_data.get("text_prompts")
             max_distance = request_data.get("max_distance")
             roi = request_data.get("roi")
         except KeyError as err:
@@ -1545,6 +1583,7 @@ class RequestViewSet(viewsets.ViewSet):
             request,
             job=job,
             roi=roi,
+            text_prompts=text_prompts,
         )
 
         handle_function_call(function, job or task, category="batch")

@@ -1,0 +1,77 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+metadata:
+  name: pth-facebookresearch-sam3-detector
+  namespace: cvat
+  annotations:
+    name: Segment Anything 3 (batch, label-to-prompt)
+    version: 2
+    type: detector
+    spec: '[]'
+    supports_text_prompt: true
+    help_message: Runs SAM3 over a whole task, detecting all instances matching each task label's configured text prompt
+
+spec:
+  description: Batch, text-prompt-driven object segmentation with SAM3. For each task label with
+    a configured prompt (see the label's "Prompt" field), detects every matching object instance.
+    Requires a Hugging Face access token with access to facebook/sam3
+    (https://huggingface.co/facebook/sam3), supplied via the HUGGING_FACE_HUB_TOKEN environment
+    variable at deploy time.
+  runtime: 'python:3.10'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/sam3-detector
+    - name: HUGGING_FACE_HUB_TOKEN
+      value: ''
+
+  build:
+    image: cvat.pth.facebookresearch.sam3_detector:latest-gpu
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+      # set NVIDIA container runtime settings
+        - kind: ENV
+          value: NVIDIA_VISIBLE_DEVICES=all
+        - kind: ENV
+          value: NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # disable interactive frontend
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+      # set workdir
+        - kind: WORKDIR
+          value: /opt/nuclio/sam3-detector
+      # install basic deps
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl git python3 python3-pip python-is-python3 ffmpeg libsm6 libxext6 && rm -rf /var/lib/apt/lists/*
+      # install sam3 deps
+      # Model weights are NOT baked into the image (facebook/sam3 is a gated model on
+      # Hugging Face); they are downloaded at container startup using the token supplied
+      # via the HUGGING_FACE_HUB_TOKEN environment variable, so the container needs
+      # outbound network access to huggingface.co.
+        - kind: RUN
+          value: pip3 install torch torchvision --no-cache-dir
+        - kind: RUN
+          value: pip3 install "transformers>=5.14.0" pillow numpy --no-cache-dir
+
+  triggers:
+    myHttpTrigger:
+      numWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

@@ -48,6 +48,12 @@ class FunctionCallRequestSerializer(serializers.Serializer):
         required=False,
         help_text="Label mapping from the model to the task labels",
     )
+    text_prompts = serializers.DictField(
+        child=serializers.CharField(allow_blank=True, max_length=1024),
+        required=False,
+        help_text="A { task_label_name: prompt_text } mapping, for text-prompt-driven "
+        "detectors (e.g. SAM3) that have no fixed label set of their own",
+    )
     roi = serializers.ListField(
         child=serializers.IntegerField(),
         min_length=4,
