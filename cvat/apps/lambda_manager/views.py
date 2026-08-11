@@ -251,6 +251,7 @@ class LambdaFunction:
         self.animated_gif = meta_anno.get("animated_gif", "")
         self.version = int(meta_anno.get("version", "1"))
         self.help_message = meta_anno.get("help_message", "")
+        self.supports_text_prompt = bool(meta_anno.get("supports_text_prompt", False))
         self.gateway = gateway
 
         if "supported_shape_types" in meta_anno:
@@ -288,6 +289,7 @@ class LambdaFunction:
                     "startswith_box_optional": self.startswith_box_optional,
                     "help_message": self.help_message,
                     "animated_gif": self.animated_gif,
+                    "supports_text_prompt": self.supports_text_prompt,
                 }
             )
         elif self.kind is FunctionKind.TRACKER:
