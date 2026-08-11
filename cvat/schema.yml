@@ -8678,6 +8678,11 @@ components:
         has_parent:
           type: boolean
           readOnly: true
+        prompt:
+          type: string
+          description: A free-text prompt associated with the label, used by text-prompt-driven
+            models (e.g. SAM3) to detect matching objects.
+          maxLength: 1024
       required:
       - name
     LabelMappingEntryRequest:
@@ -9943,6 +9948,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SublabelRequest'
+        prompt:
+          type: string
+          description: A free-text prompt associated with the label, used by text-prompt-driven
+            models (e.g. SAM3) to detect matching objects.
+          maxLength: 1024
     PatchedLabeledDataRequest:
       type: object
       properties:
@@ -11310,6 +11320,11 @@ components:
             * `tag` - TAG
         has_parent:
           type: boolean
+        prompt:
+          type: string
+          description: A free-text prompt associated with the label, used by text-prompt-driven
+            models (e.g. SAM3) to detect matching objects.
+          maxLength: 1024
       required:
       - name
     SublabelMappingEntryRequest:
@@ -11365,6 +11380,11 @@ components:
             * `tag` - TAG
         has_parent:
           type: boolean
+        prompt:
+          type: string
+          description: A free-text prompt associated with the label, used by text-prompt-driven
+            models (e.g. SAM3) to detect matching objects.
+          maxLength: 1024
       required:
       - name
     TaskFileRequest:

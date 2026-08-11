@@ -1428,6 +1428,7 @@ class Label(models.Model):
     name = SafeCharField(max_length=64)
     color = models.CharField(default="", max_length=8)
     type = models.CharField(max_length=32, choices=LabelType.choices(), default=LabelType.ANY)
+    prompt = SafeCharField(max_length=1024, blank=True, default="")
     parent = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,

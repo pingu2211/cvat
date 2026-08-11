@@ -100,6 +100,7 @@ export class Label {
     public name: string;
     public readonly id?: number;
     public readonly color?: string;
+    public prompt?: string;
     public readonly attributes: Attribute[];
     public readonly type: LabelType;
     public structure: {
@@ -115,6 +116,7 @@ export class Label {
             id: undefined,
             name: undefined,
             color: undefined,
+            prompt: undefined,
             type: undefined,
             structure: undefined,
             has_parent: false,
@@ -179,6 +181,18 @@ export class Label {
                         }
                     },
                 },
+                prompt: {
+                    get: () => data.prompt,
+                    set: (prompt) => {
+                        if (typeof prompt !== 'string') {
+                            throw new ArgumentError(`Prompt must be a string, but ${typeof prompt} was given`);
+                        }
+                        data.prompt = prompt;
+                        if (Number.isInteger(data.id)) {
+                            data.patched = true;
+                        }
+                    },
+                },
                 attributes: {
                     get: () => [...data.attributes],
                 },
@@ -225,6 +239,10 @@ export class Label {
 
         if (typeof this.color !== 'undefined') {
             object.color = this.color;
+        }
+
+        if (typeof this.prompt !== 'undefined') {
+            object.prompt = this.prompt;
         }
 
         if (typeof this.id !== 'undefined') {

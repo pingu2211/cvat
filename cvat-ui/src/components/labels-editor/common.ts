@@ -92,6 +92,10 @@ export function validateParsedLabel(label: SerializedLabel): void {
         throw new Error(`Label "${label.name}": color value is invalid`);
     }
 
+    if (typeof label.prompt !== 'undefined' && typeof label.prompt !== 'string') {
+        throw new Error(`Label "${label.name}": prompt must be a string`);
+    }
+
     if (!Array.isArray(label.attributes)) {
         throw new Error(`Label "${label.name}": attributes must be an array`);
     }

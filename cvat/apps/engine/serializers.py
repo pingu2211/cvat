@@ -419,6 +419,13 @@ class SublabelSerializer(serializers.ModelSerializer):
         help_text="Associated annotation type for this label",
     )
     has_parent = serializers.BooleanField(source="has_parent_label", required=False)
+    prompt = serializers.CharField(
+        allow_blank=True,
+        required=False,
+        max_length=1024,
+        help_text="A free-text prompt associated with the label, "
+        "used by text-prompt-driven models (e.g. SAM3) to detect matching objects.",
+    )
 
     class Meta:
         model = models.Label
@@ -429,6 +436,7 @@ class SublabelSerializer(serializers.ModelSerializer):
             "attributes",
             "type",
             "has_parent",
+            "prompt",
         )
         read_only_fields = ("parent",)
 
@@ -470,6 +478,7 @@ class LabelSerializer(SublabelSerializer):
             "task_id",
             "parent_id",
             "has_parent",
+            "prompt",
         )
         read_only_fields = ("id", "svg", "project_id", "task_id")
         extra_kwargs = {
@@ -679,6 +688,7 @@ class LabelSerializer(SublabelSerializer):
                 db_label.type = updated_type
 
             db_label.name = validated_data.get("name") or db_label.name
+            db_label.prompt = validated_data.get("prompt", db_label.prompt)
 
             logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
@@ -686,6 +696,7 @@ class LabelSerializer(SublabelSerializer):
                 db_label = models.Label.create(
                     name=validated_data.get("name"),
                     type=validated_data.get("type", models.LabelType.ANY),
+                    prompt=validated_data.get("prompt", ""),
                     parent=parent_label,
                     **parent_info,
                 )
