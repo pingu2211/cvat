@@ -16,12 +16,17 @@ do
     func_rel_path="$(realpath --relative-to="$SCRIPT_DIR" "$(dirname "$func_root")")"
 
     echo "Deploying $func_rel_path function..."
-    nuctl deploy --project-name cvat --path "$func_root" \
-        --file "$func_config" --platform local \
-        --env CVAT_FUNCTIONS_REDIS_HOST=cvat_redis_ondisk \
-        --env CVAT_FUNCTIONS_REDIS_PORT=6666 \
-        --env HUGGING_FACE_HUB_TOKEN="${HUGGING_FACE_HUB_TOKEN:-}" \
-        --platform-config '{"attributes": {"network": "cvat_cvat"}}'
+    deploy_args=(
+        --project-name cvat --path "$func_root"
+        --file "$func_config" --platform local
+        --env CVAT_FUNCTIONS_REDIS_HOST=cvat_redis_ondisk
+        --env CVAT_FUNCTIONS_REDIS_PORT=6666
+    )
+    if [ "$func_rel_path" = "pytorch/facebookresearch/sam3" ] && [ -n "${HUGGING_FACE_HUB_TOKEN:-}" ]; then
+        deploy_args+=(--env "HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}")
+    fi
+    deploy_args+=(--platform-config '{"attributes": {"network": "cvat_cvat"}}')
+    nuctl deploy "${deploy_args[@]}"
 done
 
 nuctl get function --platform local

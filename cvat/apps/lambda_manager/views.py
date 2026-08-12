@@ -164,6 +164,14 @@ class InvalidFunctionMetadataError(Exception):
     pass
 
 
+def _parse_bool_annotation(value: object, *, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("1", "true", "yes")
+
+
 class LambdaFunction:
     FRAME_PARAMETERS = (
         ("frame", "frame"),
@@ -246,12 +254,14 @@ class LambdaFunction:
         self.name = meta_anno.get("name", self.id)
         self.min_pos_points = int(meta_anno.get("min_pos_points", 1))
         self.min_neg_points = int(meta_anno.get("min_neg_points", -1))
-        self.startswith_box = bool(meta_anno.get("startswith_box", False))
-        self.startswith_box_optional = bool(meta_anno.get("startswith_box_optional", False))
+        self.startswith_box = _parse_bool_annotation(meta_anno.get("startswith_box"))
+        self.startswith_box_optional = _parse_bool_annotation(
+            meta_anno.get("startswith_box_optional")
+        )
         self.animated_gif = meta_anno.get("animated_gif", "")
         self.version = int(meta_anno.get("version", "1"))
         self.help_message = meta_anno.get("help_message", "")
-        self.supports_text_prompt = bool(meta_anno.get("supports_text_prompt", False))
+        self.supports_text_prompt = _parse_bool_annotation(meta_anno.get("supports_text_prompt"))
         self.gateway = gateway
 
         if "supported_shape_types" in meta_anno:
