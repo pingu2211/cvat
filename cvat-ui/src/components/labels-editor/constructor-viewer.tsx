@@ -10,7 +10,7 @@ import Button from 'antd/lib/button';
 import ConstructorViewerItem from './constructor-viewer-item';
 import { LabelOptColor } from './common';
 
-export type CreatorType = 'basic' | 'skeleton' | 'model';
+export type CreatorType = 'basic' | 'skeleton' | 'model' | 'template';
 
 interface ConstructorViewerProps {
     labels: LabelOptColor[];
@@ -19,6 +19,7 @@ interface ConstructorViewerProps {
     onCreate: (creatorType: CreatorType) => void;
     enableSkeletonCreator?: boolean;
     enableFromModelCreator?: boolean;
+    enableFromTemplateCreator?: boolean;
 }
 
 function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
@@ -29,6 +30,7 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
         labels,
         enableSkeletonCreator = true,
         enableFromModelCreator = true,
+        enableFromTemplateCreator = true,
     } = props;
 
     const list: JSX.Element[] = [
@@ -59,6 +61,19 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
                 className='cvat-constructor-viewer-new-from-model-item'
             >
                 From model
+                <PlusCircleOutlined />
+            </Button>,
+        );
+    }
+
+    if (enableFromTemplateCreator) {
+        list.push(
+            <Button
+                key='from_template'
+                onClick={() => onCreate('template')}
+                className='cvat-constructor-viewer-new-from-template-item'
+            >
+                From template
                 <PlusCircleOutlined />
             </Button>,
         );

@@ -28,6 +28,7 @@ interface LabelsEditorProps {
     onSubmit: (labels: LabelOptColor[]) => void | Promise<unknown>;
     enableSkeletonCreator?: boolean;
     enableFromModelCreator?: boolean;
+    enableFromTemplateCreator?: boolean;
     showLabelType?: boolean;
 }
 
@@ -278,6 +279,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             labels,
             enableSkeletonCreator = true,
             enableFromModelCreator = true,
+            enableFromTemplateCreator = true,
             showLabelType = true,
         } = this.props;
         const {
@@ -306,6 +308,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     }}
                     enableSkeletonCreator={enableSkeletonCreator}
                     enableFromModelCreator={enableFromModelCreator}
+                    enableFromTemplateCreator={enableFromTemplateCreator}
                 />
             );
         } else if (constructorMode === ConstructorMode.UPDATE && labelForUpdate !== null) {

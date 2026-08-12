@@ -9,10 +9,11 @@ import LabelForm from './label-form';
 import { LabelOptColor, SkeletonConfiguration } from './common';
 import SkeletonConfigurator from './skeleton-configurator';
 import PickFromModelComponent from './pick-from-model';
+import PickFromTemplateComponent from './pick-from-template';
 
 interface Props {
     labelNames: string[];
-    creatorType: 'basic' | 'skeleton' | 'model';
+    creatorType: 'basic' | 'skeleton' | 'model' | 'template';
     onCreate: (label: LabelOptColor) => void;
     onCancel: () => void;
     showLabelType?: boolean;
@@ -49,30 +50,45 @@ function ConstructorCreator(props: Props): JSX.Element {
         }
     }, [skeletonConfiguratorRef]);
 
+    let content: JSX.Element;
+    if (creatorType === 'model') {
+        content = (
+            <PickFromModelComponent
+                labelNames={labelNames}
+                onCancel={onCancel}
+                onCreate={onCreate}
+            />
+        );
+    } else if (creatorType === 'template') {
+        content = (
+            <PickFromTemplateComponent
+                labelNames={labelNames}
+                onCancel={onCancel}
+                onCreate={onCreate}
+            />
+        );
+    } else {
+        content = (
+            <>
+                <LabelForm
+                    label={null}
+                    labelNames={labelNames}
+                    onSubmit={onCreate}
+                    onSkeletonSubmit={creatorType === 'skeleton' ? onSkeletonSubmit : undefined}
+                    resetSkeleton={creatorType === 'skeleton' ? resetSkeleton : undefined}
+                    onCancel={onCancel}
+                    showLabelType={showLabelType}
+                />
+                {creatorType === 'skeleton' && (
+                    <SkeletonConfigurator label={null} ref={skeletonConfiguratorRef} />
+                )}
+            </>
+        );
+    }
+
     return (
         <div className='cvat-label-constructor-creator'>
-            { creatorType === 'model' ? (
-                <PickFromModelComponent
-                    labelNames={labelNames}
-                    onCancel={onCancel}
-                    onCreate={onCreate}
-                />
-            ) : (
-                <>
-                    <LabelForm
-                        label={null}
-                        labelNames={labelNames}
-                        onSubmit={onCreate}
-                        onSkeletonSubmit={creatorType === 'skeleton' ? onSkeletonSubmit : undefined}
-                        resetSkeleton={creatorType === 'skeleton' ? resetSkeleton : undefined}
-                        onCancel={onCancel}
-                        showLabelType={showLabelType}
-                    />
-                    {creatorType === 'skeleton' && (
-                        <SkeletonConfigurator label={null} ref={skeletonConfiguratorRef} />
-                    )}
-                </>
-            )}
+            {content}
         </div>
     );
 }
