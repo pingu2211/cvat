@@ -103,6 +103,24 @@
         "httpPort": 49159
       }
     },
+    "test-openvino-facebookresearch-sam3-text": {
+      "metadata": {
+        "name": "test-openvino-facebookresearch-sam3-text",
+        "annotations": {
+          "name": "SAM3 (text prompt)",
+          "spec": "",
+          "type": "detector",
+          "supports_text_prompt": "true"
+        }
+      },
+      "spec": {
+        "description": "SAM3 text-prompt-driven detector"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49163
+      }
+    },
     "test-model-has-state-building": {
       "metadata": {
         "name": "test-model-has-state-building",

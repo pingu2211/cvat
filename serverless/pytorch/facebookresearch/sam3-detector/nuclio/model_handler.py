@@ -72,7 +72,7 @@ class ModelHandler:
                 ytl = max(ytl, 0)
                 xbr = min(xbr, mask_width - 1)
                 ybr = min(ybr, mask_height - 1)
-                if xbr <= xtl or ybr <= ytl:
+                if xbr < xtl or ybr < ytl:
                     continue
 
                 results.append(

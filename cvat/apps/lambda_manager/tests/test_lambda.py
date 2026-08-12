@@ -32,6 +32,7 @@ LAMBDA_FUNCTIONS_PATH = f"{LAMBDA_ROOT_PATH}/functions"
 LAMBDA_REQUESTS_PATH = f"{LAMBDA_ROOT_PATH}/requests"
 
 id_function_detector = "test-openvino-omz-public-yolo-v3-tf"
+id_function_prompt_detector = "test-openvino-facebookresearch-sam3-text"
 id_function_reid_with_response_data = "test-openvino-omz-intel-person-reidentification-retail-0300"
 id_function_reid_with_no_response_data = (
     "test-openvino-omz-intel-person-reidentification-retail-1234"
@@ -143,32 +144,43 @@ class _LambdaTestCaseBase(ApiTestBase):
                 [77, 77],
             ]
         elif type_function == "detector":
-            data = [
-                {
-                    "confidence": "0.9959098",
-                    "label": "car",
-                    "points": [3, 3, 15, 15],
-                    "type": "rectangle",
-                },
-                {
-                    "confidence": "0.89535173",
-                    "label": "car",
-                    "points": [20, 25, 30, 35],
-                    "type": "rectangle",
-                },
-                {
-                    "confidence": "0.59464583",
-                    "label": "car",
-                    "points": [10, 10, 10, 20, 20, 10],
-                    "type": "polygon",
-                },
-                {
-                    "confidence": "0.59464583",
-                    "label": "car",
-                    "mask": [255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 0, 0, 2, 3],
-                    "type": "mask",
-                },
-            ]
+            if annotations.get("supports_text_prompt") and "text_prompts" in payload:
+                data = [
+                    {
+                        "confidence": "0.91",
+                        "label": label_name,
+                        "points": [1, 1, 5, 5],
+                        "type": "rectangle",
+                    }
+                    for label_name in payload["text_prompts"]
+                ]
+            else:
+                data = [
+                    {
+                        "confidence": "0.9959098",
+                        "label": "car",
+                        "points": [3, 3, 15, 15],
+                        "type": "rectangle",
+                    },
+                    {
+                        "confidence": "0.89535173",
+                        "label": "car",
+                        "points": [20, 25, 30, 35],
+                        "type": "rectangle",
+                    },
+                    {
+                        "confidence": "0.59464583",
+                        "label": "car",
+                        "points": [10, 10, 10, 20, 20, 10],
+                        "type": "polygon",
+                    },
+                    {
+                        "confidence": "0.59464583",
+                        "label": "car",
+                        "mask": [255, 255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 0, 0, 2, 3],
+                        "type": "mask",
+                    },
+                ]
 
         return data
 
@@ -743,6 +755,46 @@ class LambdaTestCases(_LambdaTestCaseBase):
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn(b"Job task ID does not match task ID", response.content)
+
+    def test_api_v2_lambda_functions_create_detector_with_text_prompts(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "text_prompts": {
+                "car": "a car",
+                "person": "a person",
+            },
+        }
+
+        response = self._post_request(
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_prompt_detector}", self.admin, data=data
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+
+        returned_labels = {shape["label_id"] for shape in response.json()["shapes"]}
+        task_labels_by_name = {
+            label["name"]: label["id"] for label in self.main_task["labels"]
+        }
+        self.assertEqual(
+            returned_labels, {task_labels_by_name["car"], task_labels_by_name["person"]}
+        )
+
+    def test_api_v2_lambda_functions_create_detector_with_unknown_text_prompt_label(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "text_prompts": {
+                "not_a_real_label": "something",
+            },
+        }
+
+        response = self._post_request(
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_prompt_detector}", self.admin, data=data
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertIn(b"Unknown task label", response.content)
 
     def test_api_v2_lambda_functions_create_detector(self):
         data_main_task = {
