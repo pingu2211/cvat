@@ -571,6 +571,7 @@ export default class LabelForm extends React.Component<Props> {
                         placeholder='Prompt (optional)'
                         className='cvat-label-prompt-input'
                         autoComplete='off'
+                        maxLength={1024}
                     />
                 </Form.Item>
             </CVATTooltip>

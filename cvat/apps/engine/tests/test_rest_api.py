@@ -1274,6 +1274,7 @@ class UpdateLabelsAPITestCase(ApiTestBase):
     def assertLabelsEqual(self, label1, label2):
         self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
         self.assertEqual(label1.get("color", label2.get("color")), label2.get("color"))
+        self.assertEqual(label1.get("prompt", label2.get("prompt")), label2.get("prompt"))
 
     def _check_response(self, response, db_object, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1357,6 +1358,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             "labels": [
                 {
                     "name": "new label",
+                    "prompt": "a new label prompt",
                 }
             ],
         }
@@ -1369,6 +1371,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                     "id": 1,
                     "name": "New name for label",
                     "color": "#fefefe",
+                    "prompt": "an updated label prompt",
                 }
             ],
         }
@@ -2857,6 +2860,7 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             "labels": [
                 {
                     "name": "new label",
+                    "prompt": "a new label prompt",
                 }
             ],
         }
@@ -2869,6 +2873,7 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
                     "id": 1,
                     "name": "New name for label",
                     "color": "#fefefe",
+                    "prompt": "an updated label prompt",
                 }
             ],
         }
