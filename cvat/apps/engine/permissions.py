@@ -455,6 +455,8 @@ class ProjectPermission(
                         "organization_id": Scopes.UPDATE_ORGANIZATION,
                         "source_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
                         "target_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
+                        "auto_annotation_function": Scopes.UPDATE_DESC,
+                        "auto_annotation_threshold": Scopes.UPDATE_DESC,
                     },
                 )
             )
@@ -770,6 +772,8 @@ class TaskPermission(
                         "organization_id": Scopes.UPDATE_ORGANIZATION,
                         "source_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
                         "target_storage": Scopes.UPDATE_ASSOCIATED_STORAGE,
+                        "auto_annotation_function": Scopes.UPDATE_DESC,
+                        "auto_annotation_threshold": Scopes.UPDATE_DESC,
                     },
                 )
             )

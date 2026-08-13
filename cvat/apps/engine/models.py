@@ -14,7 +14,7 @@ from collections.abc import Collection, Iterable, Sequence
 from enum import Enum, IntEnum
 from functools import cached_property
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
 from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
@@ -812,7 +812,47 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
         ).delete()
 
 
-class Project(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class AutoAnnotationConfig(NamedTuple):
+    """An auto annotation model configured for a project or a task"""
+
+    function: str
+    "The id of the serverless function to run"
+
+    threshold: float | None
+    "The detection confidence threshold, if the model supports one"
+
+
+class AutoAnnotatableModel(models.Model):
+    """
+    Adds the configuration of the auto annotation model to use for the resource.
+    """
+
+    auto_annotation_function = models.CharField(max_length=256, blank=True, default="")
+    "The id of the serverless function to auto annotate with. Empty if not configured"
+
+    auto_annotation_threshold = models.FloatField(null=True, blank=True, default=None)
+    "The detection confidence threshold to run the function with, if it supports one"
+
+    class Meta:
+        abstract = True
+
+    def get_auto_annotation_config(self) -> AutoAnnotationConfig | None:
+        if not self.auto_annotation_function:
+            return None
+
+        return AutoAnnotationConfig(
+            function=self.auto_annotation_function,
+            threshold=self.auto_annotation_threshold,
+        )
+
+
+class Project(
+    AutoAnnotatableModel,
+    DirtyFieldsMixin,
+    TimestampedModel,
+    AssignableModel,
+    FileSystemRelatedModel,
+):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -927,7 +967,13 @@ class MediaType(TextChoices):
     AUDIO = "audio"
 
 
-class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Task(
+    AutoAnnotatableModel,
+    DirtyFieldsMixin,
+    TimestampedModel,
+    AssignableModel,
+    FileSystemRelatedModel,
+):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(
@@ -1009,6 +1055,14 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
             )
             if prefetch
             else queryset
+        )
+
+    def get_auto_annotation_config(self) -> AutoAnnotationConfig | None:
+        # The task configuration overrides the project one as a whole, so that a
+        # task-level function is never combined with a project-level threshold
+        # that was meant for a different model.
+        return super().get_auto_annotation_config() or (
+            self.project.get_auto_annotation_config() if self.project else None
         )
 
     def get_dirname(self) -> Path:
