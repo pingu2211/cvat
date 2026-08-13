@@ -293,7 +293,13 @@ class LambdaFunction:
             "version": self.version,
         }
 
-        if self.kind is FunctionKind.INTERACTOR:
+        if self.kind is FunctionKind.DETECTOR:
+            response.update(
+                {
+                    "supports_text_prompt": self.supports_text_prompt,
+                }
+            )
+        elif self.kind is FunctionKind.INTERACTOR:
             response.update(
                 {
                     "min_pos_points": self.min_pos_points,
