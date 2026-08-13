@@ -48,6 +48,7 @@ id_function_state_building = "test-model-has-state-building"
 id_function_state_error = "test-model-has-state-error"
 
 expected_keys_in_response_all_functions = ["id", "kind", "labels_v2", "description", "name"]
+expected_keys_in_response_function_detector = ["supports_text_prompt"]
 expected_keys_in_response_function_interactor = ["min_pos_points", "startswith_box"]
 expected_keys_in_response_function_tracker = ["supported_shape_types"]
 expected_keys_in_response_requests = [
@@ -239,7 +240,10 @@ class _LambdaTestCaseBase(ApiTestBase):
 
     def _check_expected_keys_in_response_function(self, data):
         kind = data["kind"]
-        if kind == "interactor":
+        if kind == "detector":
+            for key in expected_keys_in_response_function_detector:
+                self.assertIn(key, data)
+        elif kind == "interactor":
             for key in expected_keys_in_response_function_interactor:
                 self.assertIn(key, data)
         elif kind == "tracker":
@@ -353,6 +357,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
     def test_api_v2_lambda_functions_read(self):
         ids_functions = [
             id_function_detector,
+            id_function_prompt_detector,
             id_function_interactor,
             id_function_tracker,
             id_function_tracker_with_supported_shape_types,
@@ -372,6 +377,18 @@ class LambdaTestCases(_LambdaTestCaseBase):
 
             response = self._get_request(path, None)
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v2_lambda_functions_read_detector_supports_text_prompt(self):
+        # The UI decides whether to show the text prompt fields or the label mapper based
+        # on this flag, so a detector must report it, and report it accurately: a
+        # prompt-driven detector has no label spec of its own to map against.
+        for id_func, expected in [
+            (id_function_prompt_detector, True),
+            (id_function_detector, False),
+        ]:
+            response = self._get_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data["supports_text_prompt"], expected)
 
     def test_api_v2_lambda_functions_read_wrong_id(self):
         id_wrong_function = "test-functions-wrong-id"
