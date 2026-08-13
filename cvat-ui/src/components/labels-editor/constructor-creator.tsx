@@ -10,10 +10,11 @@ import { LabelOptColor, SkeletonConfiguration } from './common';
 import SkeletonConfigurator from './skeleton-configurator';
 import PickFromModelComponent from './pick-from-model';
 import PickFromTemplateComponent from './pick-from-template';
+import { CreatorType } from './constructor-viewer';
 
 interface Props {
     labelNames: string[];
-    creatorType: 'basic' | 'skeleton' | 'model' | 'template';
+    creatorType: CreatorType;
     onCreate: (label: LabelOptColor) => void;
     onCancel: () => void;
     showLabelType?: boolean;

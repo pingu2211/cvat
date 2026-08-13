@@ -32,7 +32,7 @@ function PickFromTemplateComponent(props: Props): JSX.Element {
     const labels = selectedTemplate?.labels || [];
 
     return (
-        <div className='cvat-label-constructor-pick-from-template'>
+        <div className='cvat-label-constructor-pick-from-model cvat-label-constructor-pick-from-template'>
             <div>
                 <Text>Select a template to pick labels from:</Text>
             </div>
@@ -54,7 +54,7 @@ function PickFromTemplateComponent(props: Props): JSX.Element {
                 Done
             </Button>
 
-            <div className='cvat-label-constructor-pick-from-template-list'>
+            <div className='cvat-label-constructor-pick-from-model-list cvat-label-constructor-pick-from-template-list'>
                 {labels.map((label) => (
                     <Button
                         key={label.name}

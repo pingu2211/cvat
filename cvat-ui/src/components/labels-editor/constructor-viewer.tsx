@@ -71,7 +71,7 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
             <Button
                 key='from_template'
                 onClick={() => onCreate('template')}
-                className='cvat-constructor-viewer-new-from-template-item'
+                className='cvat-constructor-viewer-new-from-model-item cvat-constructor-viewer-new-from-template-item'
             >
                 From template
                 <PlusCircleOutlined />
