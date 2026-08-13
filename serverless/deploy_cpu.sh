@@ -30,7 +30,7 @@ do
         --env CVAT_FUNCTIONS_REDIS_HOST=cvat_redis_ondisk
         --env CVAT_FUNCTIONS_REDIS_PORT=6666
     )
-    if [ "$func_rel_path" = "pytorch/facebookresearch/sam3" ] && [ -n "${HUGGING_FACE_HUB_TOKEN:-}" ]; then
+    if { [ "$func_rel_path" = "pytorch/facebookresearch/sam3" ] || [ "$func_rel_path" = "pytorch/facebookresearch/sam3-detector" ]; } && [ -n "${HUGGING_FACE_HUB_TOKEN:-}" ]; then
         deploy_args+=(--env "HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}")
     fi
     deploy_args+=(--platform-config '{"attributes": {"network": "cvat_cvat"}}')
