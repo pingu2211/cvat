@@ -267,6 +267,16 @@ class _LambdaTestCaseBase(ApiTestBase):
         with Image.open(io.BytesIO(image_data)) as image:
             return image.size
 
+    def _get_task_label_ids_by_name(self, task_id: int) -> dict[str, int]:
+        labels = get_paginated_collection(
+            lambda page: self._get_request(
+                "/api/labels",
+                self.admin,
+                query_params={"task_id": task_id, "page": page, "sort": "id"},
+            )
+        )
+        return {label["name"]: label["id"] for label in labels}
+
 
 class LambdaTestCases(_LambdaTestCaseBase):
     def setUp(self):
@@ -773,9 +783,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
 
         returned_labels = {shape["label_id"] for shape in response.json()["shapes"]}
-        task_labels_by_name = {
-            label["name"]: label["id"] for label in self.main_task["labels"]
-        }
+        task_labels_by_name = self._get_task_label_ids_by_name(self.main_task["id"])
         self.assertEqual(
             returned_labels, {task_labels_by_name["car"], task_labels_by_name["person"]}
         )
@@ -840,7 +848,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         shapes = response.json()["shapes"]
         self.assertEqual(len(shapes), 1)
-        task_labels_by_name = {label["name"]: label["id"] for label in self.main_task["labels"]}
+        task_labels_by_name = self._get_task_label_ids_by_name(self.main_task["id"])
         self.assertEqual(shapes[0]["label_id"], task_labels_by_name["car"])
 
     def test_api_v2_lambda_functions_create_detector(self):
