@@ -47,7 +47,12 @@ from rq.job import Job as RQJob
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
-from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
+from cvat.apps.engine.background import (
+    BackupImporter,
+    DatasetImporter,
+    TaskCreator,
+    TaskDataAppender,
+)
 from cvat.apps.engine.cache import (
     CacheTooLargeDataError,
     CvatChunkTimestampMismatchError,
@@ -118,6 +123,7 @@ from cvat.apps.engine.serializers import (
     CloudStorageWriteSerializer,
     CommentReadSerializer,
     CommentWriteSerializer,
+    DataAppendSerializer,
     DataMetaReadSerializer,
     DataMetaWriteSerializer,
     DataSerializer,
@@ -144,7 +150,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
-from cvat.apps.engine.task import ensure_task_is_initialized
+from cvat.apps.engine.task import ensure_task_data_can_be_appended, ensure_task_is_initialized
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
@@ -1293,13 +1299,22 @@ class TaskViewSet(
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
+    _APPEND_IMAGES_ACTIONS = ("append_images", "append_images_chunk")
+
     def _is_data_uploading(self) -> bool:
         return "data" in self.action
+
+    def _is_appending_images(self) -> bool:
+        return self.action in self._APPEND_IMAGES_ACTIONS
 
     # UploadMixin method
     def get_upload_dir(self):
         if "annotations" in self.action:
             return self._object.get_tmp_dirname()
+        elif self._is_appending_images():
+            # the appended media is staged separately, so that it can be validated
+            # against the existing task data before it is added to the task
+            return self._object.data.get_append_dirname()
         elif self._is_data_uploading():
             return self._object.data.get_upload_dirname()
         elif "backup" in self.action:
@@ -1456,6 +1471,24 @@ class TaskViewSet(
             creator = TaskCreator(request=request, db_instance=self._object, db_data=data)
             return creator.enqueue_job()
 
+        def _handle_append_images(request: ExtendedRequest):
+            serializer = DataAppendSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            with transaction.atomic():
+                locked_instance = Task.objects.select_for_update().get(pk=self._object.pk)
+                ensure_task_data_can_be_appended(locked_instance)
+
+                if serializer.validated_data["client_files"]:
+                    self.append_files(request)
+
+            appender = TaskDataAppender(
+                request=request,
+                db_instance=self._object,
+                params={"upload_file_order": serializer.validated_data["upload_file_order"]},
+            )
+            return appender.enqueue_job()
+
         @transaction.atomic
         def _handle_upload_backup(request: ExtendedRequest):
             importer = BackupImporter(request=request, target=RequestTarget.TASK)
@@ -1465,6 +1498,8 @@ class TaskViewSet(
             return _handle_upload_annotations(request)
         elif self.action == "data":
             return _handle_upload_data(request)
+        elif self.action == "append_images":
+            return _handle_append_images(request)
         elif self.action == "import_backup":
             return _handle_upload_backup(request)
 
@@ -1663,6 +1698,100 @@ class TaskViewSet(
 
     @tus_chunk_action(detail=True, suffix_base="data")
     def append_data_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
+
+    @extend_schema(
+        methods=["POST"],
+        summary="Append more images to a task",
+        description=textwrap.dedent("""\
+            Allows to add more images to a task that already has data attached to it.
+
+            The uploaded images are placed after the existing task frames, and only
+            new jobs are created for them, so the annotations of the existing jobs
+            are not affected.
+
+            The uploading protocol is the same as in POST /api/tasks/{id}/data
+            (a single Data request, or an Upload-Start / chunks / Upload-Finish sequence).
+
+            Only image files can be appended, and only to tasks with image data stored
+            on the server. Tasks with a validation set (honeypots or a ground truth job),
+            consensus jobs, segment overlap, a frame filter, the 'random' sorting method,
+            or data in a cloud storage are not supported.
+
+            After all data is sent, the operation status can be retrieved via
+            the `GET /api/requests/<rq_id>`, where **rq_id** is the request ID
+            returned for this request.
+        """),
+        request=DataAppendSerializer(required=False),
+        parameters=[
+            OpenApiParameter(
+                "Upload-Start",
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.BOOL,
+                description="Initializes data upload. Optionally, can include upload metadata in the request body.",
+            ),
+            OpenApiParameter(
+                "Upload-Multiple",
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.BOOL,
+                description="Indicates that data with this request are single or multiple files that should be attached to a task",
+            ),
+            OpenApiParameter(
+                "Upload-Finish",
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.BOOL,
+                description="Finishes data upload. Can be combined with Upload-Start header to append data with one request",
+            ),
+        ],
+        responses={
+            "202": OpenApiResponse(
+                response=PolymorphicProxySerializer(
+                    component_name="DataAppendResponse",
+                    serializers=[RqIdSerializer, OpenApiTypes.BINARY],
+                    resource_type_field_name=None,
+                ),
+                description="Request to append data to a task has been accepted",
+            ),
+        },
+    )
+    @action(
+        detail=True,
+        methods=["OPTIONS", "POST"],
+        url_path=r"data/append/?$",
+        parser_classes=_UPLOAD_PARSER_CLASSES,
+    )
+    def append_images(self, request: ExtendedRequest, pk: int):
+        self._object = self.get_object()  # call check_object_permissions as well
+
+        with transaction.atomic():
+            # Lock the task to make sure the data layout is not modified concurrently,
+            # e.g. by a parallel data appending request
+            locked_instance = Task.objects.select_for_update().get(pk=pk)
+            ensure_task_data_can_be_appended(locked_instance)
+
+        append_dir = self._object.data.get_append_dirname()
+
+        # A request that begins an uploading session (either 'Upload-Start', or a single
+        # Data request without any upload headers) must not see the files of a previous,
+        # abandoned session. Continuation requests ('Upload-Length', 'Upload-Multiple',
+        # 'Upload-Finish') must keep what has been uploaded so far.
+        starts_uploading_session = request.method == "POST" and (
+            request.headers.get("Upload-Start") is not None
+            or not any(
+                header in request.headers
+                for header in ("Upload-Length", "Upload-Multiple", "Upload-Finish")
+            )
+        )
+        if starts_uploading_session:
+            shutil.rmtree(append_dir, ignore_errors=True)
+
+        os.makedirs(append_dir, exist_ok=True)
+
+        return self.upload_data(request, append_url_name="append-images-chunk")
+
+    @tus_chunk_action(detail=True, suffix_base="data/append")
+    def append_images_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 

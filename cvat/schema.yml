@@ -5973,6 +5973,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/DataResponse'
           description: Request to attach a data to a task has been accepted
+  /api/tasks/{id}/data/append/:
+    post:
+      operationId: tasks_create_data_append
+      description: |
+        Allows to add more images to a task that already has data attached to it.
+
+        The uploaded images are placed after the existing task frames, and only
+        new jobs are created for them, so the annotations of the existing jobs
+        are not affected.
+
+        The uploading protocol is the same as in POST /api/tasks/{id}/data
+        (a single Data request, or an Upload-Start / chunks / Upload-Finish sequence).
+
+        Only image files can be appended, and only to tasks with image data stored
+        on the server. Tasks with a validation set (honeypots or a ground truth job),
+        consensus jobs, segment overlap, a frame filter, the 'random' sorting method,
+        or data in a cloud storage are not supported.
+
+        After all data is sent, the operation status can be retrieved via
+        the `GET /api/requests/<rq_id>`, where **rq_id** is the request ID
+        returned for this request.
+      summary: Append more images to a task
+      parameters:
+      - in: header
+        name: Upload-Finish
+        schema:
+          type: boolean
+        description: Finishes data upload. Can be combined with Upload-Start header
+          to append data with one request
+      - in: header
+        name: Upload-Multiple
+        schema:
+          type: boolean
+        description: Indicates that data with this request are single or multiple
+          files that should be attached to a task
+      - in: header
+        name: Upload-Start
+        schema:
+          type: boolean
+        description: Initializes data upload. Optionally, can include upload metadata
+          in the request body.
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataAppendRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataAppendRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/DataAppendResponse'
+          description: Request to append data to a task has been accepted
   /api/tasks/{id}/data/meta:
     get:
       operationId: tasks_retrieve_data_meta
@@ -7385,6 +7456,14 @@ components:
           format: date-time
       required:
       - timestamp
+    ClientFileRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
     CloudStorageContent:
       type: object
       properties:
@@ -7580,6 +7659,38 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
+    DataAppendRequest:
+      type: object
+      description: Parameters of the "append more images" operation on an already
+        initialized task.
+      properties:
+        client_files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientFileRequest'
+          default: []
+          description: Uploaded files. Only image files are supported.
+        upload_file_order:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          writeOnly: true
+          description: |
+            Allows to specify the order of the appended images,
+            which defines the order of the new task frames.
+
+            Pass the list of the appended image file names in the required order.
+
+            If an empty list is passed, the images are ordered by the sorting method
+            of the task ('predefined' falls back to 'lexicographical',
+            as there is no order to reuse).
+    DataAppendResponse:
+      oneOf:
+      - $ref: '#/components/schemas/RqId'
+      - type: string
+        format: binary
     DataMetaRead:
       type: object
       properties:

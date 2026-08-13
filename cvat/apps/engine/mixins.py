@@ -112,7 +112,7 @@ class UploadMixin:
             return self.upload_finished(request)
 
     def should_result_file_be_replaced(self) -> bool:
-        return self.action in ("data", "append_data_chunk")
+        return self.action in ("data", "append_data_chunk", "append_images", "append_images_chunk")
 
     def init_tus_upload(self, request: ExtendedRequest, *, append_url_name: str) -> Response:
         if request.method == "OPTIONS":
