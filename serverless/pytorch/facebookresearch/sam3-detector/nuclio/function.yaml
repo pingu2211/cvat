@@ -22,7 +22,7 @@ spec:
     container.
   runtime: 'python:3.10'
   handler: main:handler
-  eventTimeout: 30s
+  eventTimeout: 300s
   env:
     - name: PYTHONPATH
       value: /opt/nuclio/sam3-detector
