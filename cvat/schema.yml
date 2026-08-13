@@ -10152,6 +10152,23 @@ components:
           type: integer
           writeOnly: true
           nullable: true
+        auto_annotation_function:
+          type: string
+          description: |
+            The id of the serverless function used to automatically annotate new frames,
+            e.g. when images are appended to a task. Empty if no model is configured.
+
+            The function is resolved when the annotation actually runs, so an unavailable
+            function id is not rejected here.
+          maxLength: 256
+        auto_annotation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: The detection confidence threshold to run the configured function
+            with, if the function supports one
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -10368,6 +10385,23 @@ components:
           type: integer
           writeOnly: true
           nullable: true
+        auto_annotation_function:
+          type: string
+          description: |
+            The id of the serverless function used to automatically annotate new frames,
+            e.g. when images are appended to a task. Empty if no model is configured.
+
+            The function is resolved when the annotation actually runs, so an unavailable
+            function id is not rejected here.
+          maxLength: 256
+        auto_annotation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: The detection confidence threshold to run the configured function
+            with, if the function supports one
     PatchedUserRequest:
       type: object
       properties:
@@ -10529,6 +10563,14 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        auto_annotation_function:
+          type: string
+          readOnly: true
+        auto_annotation_threshold:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
       required:
       - labels
       - tasks
@@ -10564,6 +10606,23 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
+        auto_annotation_function:
+          type: string
+          description: |
+            The id of the serverless function used to automatically annotate new frames,
+            e.g. when images are appended to a task. Empty if no model is configured.
+
+            The function is resolved when the annotation actually runs, so an unavailable
+            function id is not rejected here.
+          maxLength: 256
+        auto_annotation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: The detection confidence threshold to run the configured function
+            with, if the function supports one
       required:
       - name
     ProviderTypeEnum:
@@ -11618,7 +11677,6 @@ components:
           type: integer
           readOnly: true
           nullable: true
-          deprecated: true
         target_storage:
           allOf:
           - $ref: '#/components/schemas/Storage'
@@ -11644,6 +11702,14 @@ components:
         consensus_enabled:
           type: boolean
           readOnly: true
+        auto_annotation_function:
+          type: string
+          readOnly: true
+        auto_annotation_threshold:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
       required:
       - jobs
       - labels
@@ -11739,6 +11805,23 @@ components:
           description: |
             The number of consensus replica jobs for each annotation job.
             Configured at task creation
+        auto_annotation_function:
+          type: string
+          description: |
+            The id of the serverless function used to automatically annotate new frames,
+            e.g. when images are appended to a task. Empty if no model is configured.
+
+            The function is resolved when the annotation actually runs, so an unavailable
+            function id is not rejected here.
+          maxLength: 256
+        auto_annotation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: The detection confidence threshold to run the configured function
+            with, if the function supports one
       required:
       - name
     TasksSummary:

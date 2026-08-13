@@ -2965,6 +2965,34 @@ class TaskReadListSerializer(serializers.ListSerializer):
 
 
 @extend_schema_serializer(deprecate_fields=["organization"])
+# Declares the auto annotation model configuration fields shared by the project and
+# task write serializers. Note that it must not have a docstring: it would be inherited
+# by the serializers using it and become their component description in the API schema.
+class AutoAnnotationConfigSerializerMixin(metaclass=serializers.SerializerMetaclass):
+    AUTO_ANNOTATION_FIELDS = ("auto_annotation_function", "auto_annotation_threshold")
+
+    auto_annotation_function = serializers.CharField(
+        allow_blank=True,
+        required=False,
+        max_length=256,
+        help_text=textwrap.dedent("""\
+            The id of the serverless function used to automatically annotate new frames,
+            e.g. when images are appended to a task. Empty if no model is configured.
+
+            The function is resolved when the annotation actually runs, so an unavailable
+            function id is not rejected here.
+        """),
+    )
+    auto_annotation_threshold = serializers.FloatField(
+        allow_null=True,
+        required=False,
+        min_value=0,
+        max_value=1,
+        help_text="The detection confidence threshold to run the configured function with, "
+        "if the function supports one",
+    )
+
+
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source="data.chunk_size", required=False)
     data_compressed_chunk_type = serializers.ChoiceField(
@@ -3054,6 +3082,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             "assignee_updated_date",
             "validation_mode",
             "consensus_enabled",
+            *AutoAnnotationConfigSerializerMixin.AUTO_ANNOTATION_FIELDS,
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -3103,7 +3132,12 @@ class TaskReadSerializer(serializers.ModelSerializer):
         return representation
 
 
-class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransferableMixin):
+class TaskWriteSerializer(
+    AutoAnnotationConfigSerializerMixin,
+    WriteOnceMixin,
+    serializers.ModelSerializer,
+    OrgTransferableMixin,
+):
     labels = LabelSerializer(many=True, source="label_set", partial=True, required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -3139,6 +3173,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             "source_storage",
             "consensus_replicas",
             "organization_id",
+            *AutoAnnotationConfigSerializerMixin.AUTO_ANNOTATION_FIELDS,
         )
         write_once_fields = ("overlap", "segment_size", "consensus_replicas")
         update_only_fields = ("organization_id",)
@@ -3220,7 +3255,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
         validated_data: dict[str, Any],
         update_fields: list[str],
     ):
-        for field_name in ("name", "bug_tracker", "subset", "owner_id", "assignee_id"):
+        for field_name in (
+            "name",
+            "bug_tracker",
+            "subset",
+            "owner_id",
+            "assignee_id",
+            *AutoAnnotationConfigSerializerMixin.AUTO_ANNOTATION_FIELDS,
+        ):
             if field_name in validated_data and (
                 field_value := validated_data[field_name]
             ) != getattr(instance, field_name):
@@ -3487,6 +3529,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
             "tasks",
             "labels",
             "assignee_updated_date",
+            *AutoAnnotationConfigSerializerMixin.AUTO_ANNOTATION_FIELDS,
         )
         read_only_fields = fields
         extra_kwargs = {"organization": {"allow_null": True}}
@@ -3504,7 +3547,9 @@ class ProjectReadSerializer(serializers.ModelSerializer):
         return response
 
 
-class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
+class ProjectWriteSerializer(
+    AutoAnnotationConfigSerializerMixin, serializers.ModelSerializer, OrgTransferableMixin
+):
     labels = LabelSerializer(
         write_only=True, many=True, source="label_set", partial=True, default=[]
     )
@@ -3526,6 +3571,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
             "target_storage",
             "source_storage",
             "organization_id",
+            *AutoAnnotationConfigSerializerMixin.AUTO_ANNOTATION_FIELDS,
         )
         update_only_fields = ("organization_id",)
 
@@ -3582,7 +3628,13 @@ class ProjectWriteSerializer(serializers.ModelSerializer, OrgTransferableMixin):
         validated_data: dict[str, Any],
         update_fields: list[str],
     ):
-        for field_name in ("name", "bug_tracker", "owner_id", "assignee_id"):
+        for field_name in (
+            "name",
+            "bug_tracker",
+            "owner_id",
+            "assignee_id",
+            *AutoAnnotationConfigSerializerMixin.AUTO_ANNOTATION_FIELDS,
+        ):
             if field_name in validated_data and (
                 field_value := validated_data[field_name]
             ) != getattr(instance, field_name):
