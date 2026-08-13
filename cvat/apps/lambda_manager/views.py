@@ -479,7 +479,7 @@ class LambdaFunction:
 
         if prompt_driven:
             # No model-label <-> task-label mapping applies here (see above); results are
-            # matched against task_label_names directly when the response is processed.
+            # filtered against the text_prompts keys directly when the response is processed.
             pass
         elif not mapping:
             mapping = make_default_mapping(model_labels, task_labels)

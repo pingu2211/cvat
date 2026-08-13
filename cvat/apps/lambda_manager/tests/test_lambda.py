@@ -796,6 +796,53 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
         self.assertIn(b"Unknown task label", response.content)
 
+    def test_api_v2_lambda_functions_create_detector_with_text_prompts_filters_unmatched_labels(
+        self,
+    ):
+        # The function may return results for task labels that exist but weren't part of
+        # the requested text_prompts (e.g. "person" below); those must be filtered out of
+        # the response, not just labels that don't exist on the task at all.
+        def invoke_with_extra_label(func, payload):
+            self.assertEqual(func.id, id_function_prompt_detector)
+            self.assertEqual(payload["text_prompts"], {"car": "a car"})
+            return [
+                {
+                    "confidence": "0.91",
+                    "label": "car",
+                    "points": [1, 1, 5, 5],
+                    "type": "rectangle",
+                },
+                {
+                    "confidence": "0.91",
+                    "label": "person",
+                    "points": [2, 2, 6, 6],
+                    "type": "rectangle",
+                },
+            ]
+
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "cleanup": True,
+            "text_prompts": {
+                "car": "a car",
+            },
+        }
+
+        with mock.patch(
+            "cvat.apps.lambda_manager.views.LambdaGateway.invoke",
+            side_effect=invoke_with_extra_label,
+        ):
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_function_prompt_detector}", self.admin, data=data
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        shapes = response.json()["shapes"]
+        self.assertEqual(len(shapes), 1)
+        task_labels_by_name = {label["name"]: label["id"] for label in self.main_task["labels"]}
+        self.assertEqual(shapes[0]["label_id"], task_labels_by_name["car"])
+
     def test_api_v2_lambda_functions_create_detector(self):
         data_main_task = {
             "task": self.main_task["id"],
