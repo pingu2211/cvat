@@ -27,6 +27,7 @@ from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import field_validation, models
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
@@ -2065,6 +2066,367 @@ def initialize_task(
     _move_to_backing_cs_if_configured(db_data)
 
 
+def ensure_task_data_can_be_appended(db_task: models.Task) -> None:
+    """
+    Checks that more images can be appended to the task data,
+    raising a ValidationError explaining the reason, if they can't.
+
+    Appending only adds frames after the existing ones and only creates new jobs for them,
+    so the existing jobs and their annotations are never affected. Task configurations
+    where this cannot be guaranteed (or are not implemented yet) are rejected here.
+    """
+    ensure_task_is_initialized(db_task)
+
+    db_data = db_task.require_data()
+
+    if (db_task.media_type, db_task.mode) != (models.MediaType.IMAGE, models.TaskMode.ANNOTATION):
+        raise ValidationError(
+            "Appending images is only supported for image-based tasks in the '{}' mode".format(
+                models.TaskMode.ANNOTATION
+            )
+        )
+
+    if (
+        db_data.storage != models.StorageChoice.LOCAL
+        or db_data.cloud_storage_id is not None
+        or db_data.local_storage_backing_cs_id is not None
+    ):
+        raise ValidationError(
+            "Appending images is only supported for tasks with data stored on the server"
+        )
+
+    if db_data.sorting_method == models.SortingMethod.RANDOM:
+        raise ValidationError(
+            "Appending images is not supported for tasks with the '{}' sorting method".format(
+                models.SortingMethod.RANDOM
+            )
+        )
+
+    if db_data.start_frame or db_data.get_frame_step() != 1:
+        raise ValidationError("Appending images is not supported for tasks with a frame filter")
+
+    if db_task.overlap:
+        raise ValidationError("Appending images is not supported for tasks with segment overlap")
+
+    if db_task.consensus_replicas:
+        raise ValidationError("Appending images is not supported for tasks with consensus jobs")
+
+    if getattr(db_data, "validation_layout", None):
+        raise ValidationError("Appending images is not supported for tasks with a validation set")
+
+
+def _create_segments_and_jobs_for_frame_range(
+    db_task: models.Task, *, start_frame: int, stop_frame: int
+) -> list[models.Job]:
+    """
+    Creates segments (and their jobs) covering the [start_frame; stop_frame] range only.
+    The existing task segments are not touched.
+    """
+    segment_size = db_task.segment_size
+    assert segment_size, "The task segment size must be known for an initialized task"
+
+    segments = [
+        SegmentParams(
+            start_frame=segment_start_frame,
+            stop_frame=min(segment_start_frame + segment_size - 1, stop_frame),
+            type=models.SegmentType.RANGE,
+        )
+        for segment_start_frame in range(start_frame, stop_frame + 1, segment_size)
+    ]
+
+    job_count_total = db_task.segment_set.count() + len(segments)
+    if job_count_total > settings.MAX_JOBS_PER_TASK:
+        raise ValidationError(
+            "Too many jobs would be created for the task. "
+            f"Current total: {job_count_total}, "
+            f"maximum allowed: {settings.MAX_JOBS_PER_TASK}."
+        )
+
+    db_jobs = []
+    for segment_params in segments:
+        slogger.glob.info(
+            "New segment for task #{task_id}: start_frame = {start_frame}, "
+            "stop_frame = {stop_frame}".format(task_id=db_task.id, **segment_params._asdict())
+        )
+
+        db_segment = models.Segment(task=db_task, **segment_params._asdict())
+        db_segment.save()
+
+        db_job = models.Job(segment=db_segment)
+        db_job.save()
+        db_job.make_dirs()
+
+        db_jobs.append(db_job)
+
+    return db_jobs
+
+
+def _collect_appended_files(append_dir: Path) -> list[str]:
+    return sorted(
+        p.relative_to(append_dir).as_posix() for p in append_dir.glob("**/*") if p.is_file()
+    )
+
+
+def _apply_appended_file_order(image_files: list[str], ordering: list[str]) -> list[str]:
+    mismatching_files = sorted(set(image_files).symmetric_difference(ordering))
+    if mismatching_files:
+        raise ValidationError(
+            "Appended files do not match the 'upload_file_order' field contents. "
+            "It must list all the appended image files exactly once. "
+            "Mismatching files: {}".format(format_list(mismatching_files))
+        )
+
+    return list(ordering)
+
+
+def _validate_appended_files_are_new(
+    db_data: models.Data, *, file_paths: Iterable[str], upload_dir: Path
+) -> None:
+    known_paths = set(db_data.images.values_list("path", flat=True))
+    known_paths.update(db_data.related_files.values_list("path", flat=True))
+
+    conflicting_paths = sorted(
+        path for path in file_paths if path in known_paths or (upload_dir / path).exists()
+    )
+    if conflicting_paths:
+        raise ValidationError(
+            "The following files are already present in the task: {}. "
+            "Appended files must have names not used in the task yet.".format(
+                format_list(conflicting_paths)
+            )
+        )
+
+
+def _invalidate_last_task_chunk(db_task: models.Task, *, old_data_size: int) -> None:
+    # Task chunks are built over the whole task frame sequence, so the last one
+    # was incomplete if the frame count was not a multiple of the chunk size.
+    # Segment chunks are not affected: the appended frames only go into new segments.
+    db_data = db_task.require_data()
+    if not old_data_size or old_data_size % db_data.chunk_size == 0:
+        return
+
+    media_cache = MediaCache()
+    last_chunk_number = (old_data_size - 1) // db_data.chunk_size
+    for quality in models.FrameQuality:
+        media_cache.remove_task_chunk(db_task, last_chunk_number, quality=quality)
+
+
+@transaction.atomic
+def append_task_data(db_task: int | models.Task, data: dict[str, Any]) -> None:
+    """
+    Appends the images uploaded into the task append directory to the task data.
+
+    The new frames are placed after the existing ones and are covered by newly created
+    jobs, so the annotations of the existing jobs are preserved.
+    """
+    if isinstance(db_task, int):
+        db_task = models.Task.objects.select_for_update().get(pk=db_task)
+
+    slogger.task[db_task.id].info("appending data to task")
+
+    ensure_task_data_can_be_appended(db_task)
+
+    db_data = models.Data.objects.select_for_update(nowait=True).get(pk=db_task.data_id)
+    db_task.data = db_data
+
+    rq_job_meta = ImportRQMeta.for_job(rq.get_current_job())
+
+    def update_status(msg: str) -> None:
+        rq_job_meta.status = msg
+        rq_job_meta.save()
+
+    append_dir = db_data.get_append_dirname()
+    upload_dir = db_data.get_upload_dirname()
+
+    try:
+        _append_task_data(
+            db_task, data, append_dir=append_dir, upload_dir=upload_dir, update_status=update_status
+        )
+    finally:
+        # The staged files are either moved into the task data or no longer usable,
+        # in both cases they must not be picked up by the next appending attempt
+        shutil.rmtree(append_dir, ignore_errors=True)
+
+
+def _append_task_data(
+    db_task: models.Task,
+    data: dict[str, Any],
+    *,
+    append_dir: Path,
+    upload_dir: Path,
+    update_status: Callable[[str], None],
+) -> None:
+    db_data = db_task.require_data()
+
+    update_status("Media files are being extracted...")
+
+    appended_files = _collect_appended_files(append_dir)
+    if not appended_files:
+        raise ValidationError("No appended media data found")
+
+    av_scan_paths(append_dir)
+
+    media, detected_mode = _validate_data(
+        _count_files({"client_files": appended_files, "server_files": [], "remote_files": []})
+    )
+    if detected_mode != models.TaskMode.ANNOTATION or any(
+        files for media_type, files in media.items() if media_type != "image"
+    ):
+        raise ValidationError("Only image files can be appended to an existing task")
+
+    if upload_file_order := data.get("upload_file_order"):
+        image_files = _apply_appended_file_order(media["image"], upload_file_order)
+        sorting_method = models.SortingMethod.PREDEFINED
+    else:
+        image_files = media["image"]
+        # PREDEFINED requires an explicit order, which is not available here,
+        # so fall back to the deterministic order the files were collected in
+        sorting_method = (
+            db_data.sorting_method
+            if db_data.sorting_method != models.SortingMethod.PREDEFINED
+            else models.SortingMethod.LEXICOGRAPHICAL
+        )
+
+    extractor = ImageListReader(
+        source_paths=[append_dir / f for f in image_files],
+        sorting_method=sorting_method,
+    )
+
+    _, detected_dimension = _detect_media_type_and_dimension(
+        extractor=extractor, source_dir=append_dir, db_data=db_data
+    )
+    if detected_dimension != db_task.dimension:
+        raise ValidationError(
+            f"The appended media dimension ({detected_dimension}) does not match "
+            f"the task dimension ({db_task.dimension})"
+        )
+
+    related_images = _find_and_filter_related_images(extractor, upload_dir=append_dir)
+
+    _validate_appended_files_are_new(db_data, file_paths=appended_files, upload_dir=upload_dir)
+
+    update_status("Task data is being updated")
+
+    manifest = ImageManifestManager(db_data.get_manifest_path())
+    if not manifest.exists:
+        raise ValidationError("The task data manifest is missing, images cannot be appended")
+
+    manifest_size = manifest.manifest.path.stat().st_size
+    manifest.link(
+        sources=extractor.absolute_source_paths,
+        meta={k: {"related_images": related_images[k]} for k in related_images},
+        data_dir=append_dir,
+        DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+    )
+    new_manifest_entries = list(manifest.reader)
+
+    old_data_size = db_data.size
+    moved_files: list[Path] = []
+
+    try:
+        for file_path in appended_files:
+            source_path = append_dir / file_path
+            destination_path = upload_dir / file_path
+            destination_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(source_path, destination_path)
+            moved_files.append(destination_path)
+
+        db_images = db_utils.bulk_create(
+            models.Image,
+            [
+                models.Image(
+                    data=db_data,
+                    path=extractor.get_path(frame_id).relative_to(append_dir).as_posix(),
+                    frame=old_data_size + frame_id,
+                    width=entry["width"],
+                    height=entry["height"],
+                )
+                for frame_id, entry in zip(extractor.frame_range, new_manifest_entries)
+            ],
+        )
+
+        db_utils.bulk_create(
+            models.ClientFile,
+            [
+                models.ClientFile(data=db_data, file=os.fspath(upload_dir / file_path))
+                for file_path in appended_files
+            ],
+        )
+
+        db_related_files = db_utils.bulk_create(
+            models.RelatedFile,
+            [
+                models.RelatedFile(data=db_data, path=related_file_path)
+                for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
+            ],
+        )
+        db_related_files_by_path = {rf.path: rf for rf in db_related_files}
+
+        ThroughModel = models.RelatedFile.images.through
+        db_utils.bulk_create(
+            ThroughModel,
+            (
+                ThroughModel(
+                    relatedfile_id=db_related_files_by_path[related_file_path].id,
+                    image_id=image.id,
+                )
+                for image in db_images
+                for related_file_path in related_images.get(image.path, [])
+            ),
+        )
+
+        db_data.size = old_data_size + len(db_images)
+        db_data.stop_frame = db_data.size - 1
+        try:
+            db_data.content_size = get_path_size(upload_dir)
+        except Exception:
+            slogger.glob.warning(
+                f"Could not calculate raw data size for task #{db_task.id}", exc_info=True
+            )
+        db_data.save()
+
+        db_jobs = _create_segments_and_jobs_for_frame_range(
+            db_task, start_frame=old_data_size, stop_frame=db_data.size - 1
+        )
+
+        manifest.append(new_manifest_entries)
+
+        _invalidate_last_task_chunk(db_task, old_data_size=old_data_size)
+
+        if (
+            settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+            and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        ):
+            update_status("CVAT is preparing data chunks")
+            _create_static_chunks(
+                db_task,
+                media_extractor=ImageListReader(
+                    source_paths=[upload_dir / image.path for image in db_images],
+                    sorting_method=models.SortingMethod.PREDEFINED,
+                ),
+                upload_dir=upload_dir,
+                db_segments=[db_job.segment for db_job in db_jobs],
+            )
+    except Exception:
+        # The DB changes are rolled back by the transaction, revert the file system ones
+        with open(manifest.manifest.path, "r+") as manifest_file:
+            manifest_file.truncate(manifest_size)
+        manifest.set_index()
+
+        for moved_file in moved_files:
+            moved_file.unlink(missing_ok=True)
+
+        raise
+
+    db_task.touch()
+
+    slogger.glob.info(
+        "Appended {} frames to Data #{}, {} frames in total".format(
+            len(db_images), db_data.id, db_data.size
+        )
+    )
+
+
 def _create_task_preview(db_task: models.Task):
     # Prepare the preview image and save it in the cache
     match db_task.media_type:
@@ -2077,8 +2439,17 @@ def _create_task_preview(db_task: models.Task):
 
 
 def _create_static_chunks(
-    db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: Path
+    db_task: models.Task,
+    *,
+    media_extractor: IMediaReader,
+    upload_dir: Path,
+    db_segments: Sequence[models.Segment] | None = None,
 ) -> None:
+    """
+    Builds static chunks for the requested task segments (all of them by default).
+    'media_extractor' must provide the media for all the frames of these segments.
+    """
+
     @attrs.define
     class _ChunkProgressUpdater:
         _call_counter: int = attrs.field(default=0, init=False)
@@ -2167,7 +2538,8 @@ def _create_static_chunks(
         quality=original_quality, dimension=db_task.dimension
     )
 
-    db_segments = db_task.segment_set.order_by("start_frame").all()
+    if db_segments is None:
+        db_segments = db_task.segment_set.order_by("start_frame").all()
 
     frame_map = {}  # frame number -> extractor frame number
 
@@ -2198,6 +2570,8 @@ def _create_static_chunks(
         frame_map = {
             frame.frame: extractor_frame_ids[upload_dir / frame.path]
             for frame in db_data.images.all()
+            # the extractor only provides the media of the requested segments
+            if upload_dir / frame.path in extractor_frame_ids
         }
 
         media_iterator = RandomAccessIterator(media_extractor)

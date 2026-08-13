@@ -536,6 +536,13 @@ class Data(models.Model):
     def get_upload_dirname(self) -> Path:
         return self.get_data_dirname() / "raw"
 
+    def get_append_dirname(self) -> Path:
+        """
+        A staging directory for media that is being appended to an already initialized task.
+        Its contents are moved into the upload directory once the appended media is validated.
+        """
+        return self.get_data_dirname() / "append"
+
     def get_raw_data_dirname(self) -> Path:
         return {
             StorageChoice.LOCAL: self.get_upload_dirname(),
@@ -1826,6 +1833,7 @@ class Asset(models.Model):
 
 
 class RequestAction(TextChoices):
+    APPEND = "append"
     AUTOANNOTATE = "autoannotate"
     CREATE = "create"
     IMPORT = "import"

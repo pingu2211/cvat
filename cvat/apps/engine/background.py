@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Any
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -67,7 +68,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer,
     TaskFileSerializer,
 )
-from cvat.apps.engine.task import initialize_task
+from cvat.apps.engine.task import append_task_data, initialize_task
 from cvat.apps.engine.tus import TusFile, TusFileForbiddenError, TusFileNotFoundError
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -792,3 +793,33 @@ class TaskCreator(AbstractRequestManager):
     def init_callback_with_params(self):
         self.callback = initialize_task
         self.callback_args = (self.db_instance.pk, self.db_data)
+
+
+class TaskDataAppender(AbstractRequestManager):
+    QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
+    SUPPORTED_TARGETS = {RequestTarget.TASK}
+
+    def __init__(
+        self,
+        *,
+        request: ExtendedRequest,
+        db_instance: Task,
+        params: dict[str, Any],
+    ):
+        super().__init__(request=request, db_instance=db_instance)
+        self.params = params
+
+    @property
+    def job_failed_ttl(self):
+        return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
+
+    def build_request_id(self):
+        return ImportRequestId(
+            action=RequestAction.APPEND,
+            target=RequestTarget.TASK,
+            target_id=self.db_instance.pk,
+        ).render()
+
+    def init_callback_with_params(self):
+        self.callback = append_task_data
+        self.callback_args = (self.db_instance.pk, self.params)

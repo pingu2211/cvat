@@ -2869,6 +2869,34 @@ class DataSerializer(serializers.ModelSerializer):
                 )
 
 
+class DataAppendSerializer(serializers.Serializer):
+    """
+    Parameters of the "append more images" operation on an already initialized task.
+    """
+
+    client_files = ClientFileSerializer(
+        many=True,
+        default=[],
+        help_text="Uploaded files. Only image files are supported.",
+    )
+    upload_file_order = serializers.ListField(
+        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
+        default=list,
+        allow_empty=True,
+        write_only=True,
+        help_text=textwrap.dedent("""\
+            Allows to specify the order of the appended images,
+            which defines the order of the new task frames.
+
+            Pass the list of the appended image file names in the required order.
+
+            If an empty list is passed, the images are ordered by the sorting method
+            of the task ('predefined' falls back to 'lexicographical',
+            as there is no order to reuse).
+        """),
+    )
+
+
 class TaskReadListSerializer(serializers.ListSerializer):
     def to_representation(self, data):
         if (request := self.context.get("request")) and isinstance(data, list) and data:

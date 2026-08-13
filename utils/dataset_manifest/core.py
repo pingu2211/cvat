@@ -780,6 +780,16 @@ class ImageManifestManager(_ManifestManager):
 
         self.set_index()
 
+    def append(self, content=None, _tqdm=None):
+        """Adds new entries to the end of an existing manifest file"""
+        assert self.exists, "A manifest file does not exist, entries cannot be appended"
+
+        with open(self._manifest.path, "a") as manifest_file:
+            obj = content if content else self._reader
+            self._write_core_part(manifest_file, obj, _tqdm)
+
+        self.set_index()
+
     def partial_update(self, number, properties):
         pass
 

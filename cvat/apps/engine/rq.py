@@ -416,7 +416,8 @@ class ImportRequestId(
     RequestIdWithOptionalSubresource,  # subresource is optional because import queue works also with task creation jobs
     RequestIdWithOptionalFormat,
 ):
-    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = ("create", "import")
+    # "append" is used for adding more media to an already initialized task
+    ACTION_ALLOWED_VALUES: ClassVar[tuple[str]] = ("append", "create", "import")
     SUBRESOURCE_ALLOWED_VALUES: ClassVar[tuple[str]] = ("backup", "dataset", "annotations")
     QUEUE_SELECTORS: ClassVar[tuple[str]] = ACTION_ALLOWED_VALUES
 
