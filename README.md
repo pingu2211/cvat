@@ -86,6 +86,10 @@ cd cvat
 docker compose up -d
 ```
 
+> 💡 This does **not** build from your local sources. Compose runs whatever image already carries the
+> configured tag, and pulls the prebuilt image from Docker Hub only when that tag is missing locally.
+> To build the images yourself, see [Building the images locally](#building-the-images-locally).
+
 **2. Create an admin account**
 
 ```bash
@@ -103,6 +107,51 @@ instructions and OS-specific setup.
 
 Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
 take our free course – [CVAT Academy](https://www.cvat.ai/resources/academy).
+
+### Building the images locally
+
+`docker-compose.yml` declares `cvat_server` and `cvat_ui` with an `image:` reference and no `build:`
+section, so plain `docker compose up -d` never compiles your working tree — it just runs the image that
+carries the configured tag, fetching it from Docker Hub if you do not already have it. Building from your
+sources requires the `docker-compose.dev.yml` override, which adds the `build` sections for those two
+services:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+Use `build` instead of `up --build` if you only want the images:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+```
+
+Notes:
+
+- Include the override on **every** `docker compose` invocation for that deployment (`up`, `down`, `build`,
+  `ps`, `logs`). Without it, Compose sees no `build` section and will not rebuild your changes.
+- Locally built images reuse the same tags as the published ones — `cvat/server:dev` and `cvat/ui:dev` by
+  default — so a local build replaces the Docker Hub copy under that tag, and a later `docker compose pull`
+  replaces your build. Set `CVAT_VERSION` to keep them apart or to choose a different tag:
+
+  ```bash
+  CVAT_VERSION=latest docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+  ```
+
+- The override also exposes debug ports and forwards build arguments such as `CLAM_AV` and
+  `CVAT_DEBUG_ENABLED`.
+- Combine it with the other overrides as needed, for example with the serverless component:
+
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml \
+    -f components/serverless/docker-compose.serverless.yml up -d --build
+  ```
+
+To go back to the published images, run `docker compose pull` (optionally with `CVAT_VERSION=latest`) to
+overwrite your locally built tags, then start the stack without the override.
+
+For a full development setup — running the server and UI outside Docker, debugging, and tests — see the
+[Development Environment Guide](https://docs.cvat.ai/docs/contributing/development-environment/).
 
 _For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upgrades), see the [Deployment Guides](https://docs.cvat.ai/docs/administration/community/advanced/)._
 
