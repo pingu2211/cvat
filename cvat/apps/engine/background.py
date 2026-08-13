@@ -780,7 +780,7 @@ class TaskCreator(AbstractRequestManager):
         self.db_data = db_data
 
     @property
-    def job_failure_ttl(self):
+    def job_failed_ttl(self):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
 
     def build_request_id(self):
