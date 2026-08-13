@@ -773,9 +773,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
 
         returned_labels = {shape["label_id"] for shape in response.json()["shapes"]}
-        task_labels_by_name = {
-            label["name"]: label["id"] for label in self.main_task["labels"]
-        }
+        task_labels_by_name = {label["name"]: label["id"] for label in self.main_task["labels"]}
         self.assertEqual(
             returned_labels, {task_labels_by_name["car"], task_labels_by_name["person"]}
         )

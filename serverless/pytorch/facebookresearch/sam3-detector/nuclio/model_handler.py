@@ -34,9 +34,13 @@ class ModelHandler:
         # torch.cuda.is_available() decides the device; a missing GPU never blocks the
         # model from loading or running, it only makes inference slower.
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = Sam3Model.from_pretrained(CHECKPOINT, token=token).to(self.device)
+        # The checkpoint is deliberately left unpinned (bandit B615) so that redeploying the
+        # function picks up the current facebook/sam3 weights. The repository is gated, and is
+        # only reachable with the access token the operator supplies at deploy time.
+        model = Sam3Model.from_pretrained(CHECKPOINT, token=token)  # nosec B615
+        self.model = model.to(self.device)
         self.model.eval()
-        self.processor = Sam3Processor.from_pretrained(CHECKPOINT, token=token)
+        self.processor = Sam3Processor.from_pretrained(CHECKPOINT, token=token)  # nosec B615
 
     def handle(self, image, text_prompts: dict, threshold: float = 0.5) -> list:
         # text_prompts: { task_label_name: prompt_text }

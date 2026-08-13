@@ -39,9 +39,13 @@ class ModelHandler:
         # torch.cuda.is_available() decides the device; a missing GPU never blocks the
         # model from loading or running, it only makes inference slower.
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = Sam3Model.from_pretrained(CHECKPOINT, token=token).to(self.device)
+        # The checkpoint is deliberately left unpinned (bandit B615) so that redeploying the
+        # function picks up the current facebook/sam3 weights. The repository is gated, and is
+        # only reachable with the access token the operator supplies at deploy time.
+        model = Sam3Model.from_pretrained(CHECKPOINT, token=token)  # nosec B615
+        self.model = model.to(self.device)
         self.model.eval()
-        self.processor = Sam3Processor.from_pretrained(CHECKPOINT, token=token)
+        self.processor = Sam3Processor.from_pretrained(CHECKPOINT, token=token)  # nosec B615
 
     def handle(self, image, pos_points, neg_points, obj_bbox, text_prompt, threshold=0.5):
         # obj_bbox, pos_points and neg_points all arrive as nested point pairs,
@@ -71,9 +75,9 @@ class ModelHandler:
         if text_prompt:
             processor_kwargs["text"] = text_prompt
 
-        inputs = self.processor(
-            images=image, return_tensors="pt", **processor_kwargs
-        ).to(self.device)
+        inputs = self.processor(images=image, return_tensors="pt", **processor_kwargs).to(
+            self.device
+        )
 
         with torch.no_grad():
             outputs = self.model(**inputs)
