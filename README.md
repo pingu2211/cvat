@@ -86,6 +86,10 @@ cd cvat
 docker compose up -d
 ```
 
+> 💡 This pulls the prebuilt `cvat/server` and `cvat/ui` images from Docker Hub — it does **not** build
+> from your local sources. To build the images yourself, see
+> [Building the images locally](#building-the-images-locally).
+
 **2. Create an admin account**
 
 ```bash
@@ -103,6 +107,49 @@ instructions and OS-specific setup.
 
 Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
 take our free course – [CVAT Academy](https://www.cvat.ai/resources/academy).
+
+### Building the images locally
+
+`docker-compose.yml` only references the published `cvat/server` and `cvat/ui` images, so plain
+`docker compose up -d` always runs the version from Docker Hub, even if you have modified the source.
+Building from your working tree requires the `docker-compose.dev.yml` override, which adds the `build`
+sections for those two services:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
+Use `build` instead of `up --build` if you only want the images:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+```
+
+Notes:
+
+- Include the override on **every** `docker compose` invocation for that deployment (`up`, `down`, `build`,
+  `ps`, `logs`). Without it, Compose resolves the services back to the pulled images.
+- Locally built images are tagged `cvat/server:dev` and `cvat/ui:dev` by default. Set `CVAT_VERSION` to
+  choose a different tag:
+
+  ```bash
+  CVAT_VERSION=latest docker compose -f docker-compose.yml -f docker-compose.dev.yml build
+  ```
+
+- The override also exposes debug ports and forwards build arguments such as `CLAM_AV` and
+  `CVAT_DEBUG_ENABLED`.
+- Combine it with the other overrides as needed, for example with the serverless component:
+
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml \
+    -f components/serverless/docker-compose.serverless.yml up -d --build
+  ```
+
+To go back to the published images, run `docker compose pull` (optionally with `CVAT_VERSION=latest`)
+and start the stack without the override.
+
+For a full development setup — running the server and UI outside Docker, debugging, and tests — see the
+[Development Environment Guide](https://docs.cvat.ai/docs/contributing/development-environment/).
 
 _For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upgrades), see the [Deployment Guides](https://docs.cvat.ai/docs/administration/community/advanced/)._
 
