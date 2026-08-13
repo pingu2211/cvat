@@ -1,7 +1,8 @@
 name: Publish artifacts
+# Disabled from automatic triggering (personal project, no public releases to publish).
+# Kept dispatchable in case artifacts ever need to be published manually.
 on:
-  release:
-    types: [released]
+  workflow_dispatch:
 
 jobs:
   docker-images:

@@ -1,11 +1,8 @@
 name: Docs
+# Disabled from automatic triggering (personal project, no public docs site to publish).
+# Kept dispatchable in case docs ever need to be built/published manually.
 on:
-  push:
-    branches:
-      - 'master'
-      - 'develop'
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

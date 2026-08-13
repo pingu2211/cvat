@@ -1,9 +1,8 @@
 name: Trigger Agent Image Builds
 
+# Release trigger disabled (personal project, no releases published; kept dispatchable).
 on:
   workflow_dispatch:
-  release:
-    types: [released]
 
 jobs:
   dispatch:
