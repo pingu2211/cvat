@@ -1485,7 +1485,11 @@ class TaskViewSet(
             appender = TaskDataAppender(
                 request=request,
                 db_instance=self._object,
-                params={"upload_file_order": serializer.validated_data["upload_file_order"]},
+                params={
+                    "upload_file_order": serializer.validated_data["upload_file_order"],
+                    # the auto annotation of the appended frames, if any, runs on this user's behalf
+                    "user_id": request.user.id,
+                },
             )
             return appender.enqueue_job()
 

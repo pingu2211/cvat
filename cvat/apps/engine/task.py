@@ -22,6 +22,7 @@ import av
 import requests
 import rq
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.forms.models import model_to_dict
 from rest_framework.serializers import ValidationError
@@ -2239,13 +2240,58 @@ def append_task_data(db_task: int | models.Task, data: dict[str, Any]) -> None:
     upload_dir = db_data.get_upload_dirname()
 
     try:
-        _append_task_data(
+        appended_frames = _append_task_data(
             db_task, data, append_dir=append_dir, upload_dir=upload_dir, update_status=update_status
         )
     finally:
         # The staged files are either moved into the task data or no longer usable,
         # in both cases they must not be picked up by the next appending attempt
         shutil.rmtree(append_dir, ignore_errors=True)
+
+    # The auto annotation runs in its own background job, which must not start
+    # before the appended frames are visible to it
+    transaction.on_commit(
+        lambda: _auto_annotate_appended_frames(
+            db_task, frames=appended_frames, user_id=data.get("user_id")
+        )
+    )
+
+
+def _auto_annotate_appended_frames(
+    db_task: models.Task, *, frames: Sequence[int], user_id: int | None
+) -> None:
+    """
+    Starts an auto annotation request for the appended frames, if the task
+    (or its project) has an auto annotation model configured.
+
+    The frames are already part of the task at this point, so a failure to start
+    the annotation is reported but does not fail the appending operation.
+    """
+    # Imported here to avoid a circular import: the lambda manager imports this module
+    from cvat.apps.lambda_manager.auto_annotation import run_configured_auto_annotation
+
+    if not db_task.get_auto_annotation_config():
+        return
+
+    if user_id is None:
+        slogger.task[db_task.id].warning(
+            "Skipping the auto annotation of the appended frames: the requesting user is unknown"
+        )
+        return
+
+    try:
+        request_id = run_configured_auto_annotation(
+            db_task, user=User.objects.get(pk=user_id), frames=frames
+        )
+    except Exception:
+        slogger.task[db_task.id].exception(
+            "Could not start the auto annotation of the appended frames"
+        )
+        return
+
+    slogger.task[db_task.id].info(
+        f"Started request {request_id} to auto annotate {len(frames)} appended frames"
+    )
 
 
 def _append_task_data(
@@ -2255,7 +2301,8 @@ def _append_task_data(
     append_dir: Path,
     upload_dir: Path,
     update_status: Callable[[str], None],
-) -> None:
+) -> Sequence[int]:
+    """Returns the numbers of the appended task frames"""
     db_data = db_task.require_data()
 
     update_status("Media files are being extracted...")
@@ -2425,6 +2472,8 @@ def _append_task_data(
             len(db_images), db_data.id, db_data.size
         )
     )
+
+    return range(old_data_size, db_data.size)
 
 
 def _create_task_preview(db_task: models.Task):
