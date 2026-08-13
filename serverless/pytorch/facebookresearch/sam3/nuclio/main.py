@@ -42,9 +42,7 @@ def handler(context, event):
     obj_bbox = data.get("obj_bbox")
     text_prompt = _extract_text_prompt(data)
 
-    rle = context.user_data.model.handle(
-        image, pos_points, neg_points, obj_bbox, text_prompt
-    )
+    rle = context.user_data.model.handle(image, pos_points, neg_points, obj_bbox, text_prompt)
 
     if rle is None:
         return context.Response(
