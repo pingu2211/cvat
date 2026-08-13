@@ -99,7 +99,9 @@ class TaskDataAppendAPITestCase(ApiTestBase):
         )
 
         jobs_before = self._get_jobs(task_id)
-        self.assertEqual([(0, 1), (2, 2)], [(j["start_frame"], j["stop_frame"]) for j in jobs_before])
+        self.assertEqual(
+            [(0, 1), (2, 2)], [(j["start_frame"], j["stop_frame"]) for j in jobs_before]
+        )
 
         label_id = self._get_meta(task_id) and Task.objects.get(pk=task_id).label_set.first().id
         annotations = {

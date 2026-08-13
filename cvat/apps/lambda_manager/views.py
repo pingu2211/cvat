@@ -10,10 +10,12 @@ import io
 import json
 import os
 import textwrap
+from collections.abc import Sequence
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
 from typing import Any
+from uuid import UUID
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -21,6 +23,7 @@ import numpy as np
 import requests
 import rq
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.signing import BadSignature, TimestampSigner
 from drf_spectacular.types import OpenApiTypes
@@ -791,11 +794,13 @@ class LambdaQueue:
         cleanup,
         conv_mask_to_poly,
         max_distance,
-        request: ExtendedRequest,
         *,
+        user: User,
+        request_uuid: UUID,
         job: int | None = None,
         roi: list | None = None,
         text_prompts: dict[str, str] | None = None,
+        frames: Sequence[int] | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -821,12 +826,12 @@ class LambdaQueue:
             # with invocation of non-trivial functions. For example, it cannot run
             # staticmethod, it cannot run a callable class. Thus I provide an object
             # which has __call__ function.
-            user_id = request.user.id
+            user_id = user.id
 
             with get_rq_lock_by_user(queue, user_id):
                 meta = LambdaRQMeta.build_for(
-                    user=request.user,
-                    uuid=request.uuid,
+                    user=user,
+                    uuid=request_uuid,
                     request_manager_cls=type(self),
                     instance=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
                     function_id=lambda_func.id,
@@ -846,6 +851,7 @@ class LambdaQueue:
                         "max_distance": max_distance,
                         "roi": roi,
                         "text_prompts": text_prompts,
+                        "frames": frames,
                     },
                     depends_on=define_dependent_job(queue, user_id),
                     result_ttl=self.RESULT_TTL.total_seconds(),
@@ -1111,14 +1117,15 @@ class LambdaJob:
         db_job: Job | None = None,
         roi: list | None = None,
         text_prompts: dict[str, str] | None = None,
+        frames: Sequence[int] | None = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
         converter = DetectionResultConverter(db_task)
 
-        frame_set = cls._get_frame_set(db_task, db_job)
+        frame_set = cls._get_frame_set(db_task, db_job, frames=frames)
 
-        for frame in frame_set:
+        for processed_frame_count, frame in enumerate(frame_set, start=1):
             if frame in db_task.data.deleted_frames:
                 continue
 
@@ -1136,7 +1143,9 @@ class LambdaJob:
                 converter=converter,
             )
 
-            progress = (frame + 1) / db_task.data.size
+            # The run can cover a part of the task only, e.g. a single job
+            # or the frames that have just been appended
+            progress = processed_frame_count / len(frame_set)
             if not cls._update_progress(progress):
                 break
 
@@ -1163,7 +1172,9 @@ class LambdaJob:
         return job.get_status()
 
     @classmethod
-    def _get_frame_set(cls, db_task: Task, db_job: Job | None):
+    def _get_frame_set(
+        cls, db_task: Task, db_job: Job | None, *, frames: Sequence[int] | None = None
+    ):
         if db_job:
             task_data = db_task.data
             data_start_frame = task_data.start_frame
@@ -1173,6 +1184,12 @@ class LambdaJob:
             )
         else:
             frame_set = range(db_task.data.size)
+
+        if frames is not None:
+            # Restrict the run to an explicitly requested subset of the frames,
+            # e.g. only the frames that have just been appended to the task
+            requested_frames = set(frames)
+            frame_set = [frame for frame in frame_set if frame in requested_frames]
 
         return frame_set
 
@@ -1309,6 +1326,7 @@ class LambdaJob:
                 db_job=db_job,
                 roi=kwargs.get("roi"),
                 text_prompts=kwargs.get("text_prompts"),
+                frames=kwargs.get("frames"),
             )
         elif function.kind == FunctionKind.REID:
             cls._call_reid(
@@ -1580,7 +1598,8 @@ class RequestViewSet(viewsets.ViewSet):
             cleanup,
             conv_mask_to_poly,
             max_distance,
-            request,
+            user=request.user,
+            request_uuid=request.uuid,
             job=job,
             roi=roi,
             text_prompts=text_prompts,
