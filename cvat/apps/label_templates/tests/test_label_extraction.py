@@ -238,6 +238,19 @@ class TestExtractLabels(SimpleTestCase):
         assert labels[0]["color"] == ""
         assert labels[1]["attributes"] == []
 
+    def test_rejects_an_xml_bomb(self) -> None:
+        bomb = b"""<?xml version="1.0"?>
+        <!DOCTYPE annotations [
+          <!ENTITY a "aaaaaaaaaa">
+          <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">
+        ]>
+        <annotations><meta><task><labels>
+          <label><name>&b;</name></label>
+        </labels></task></meta></annotations>"""
+
+        with self.assertRaises(LabelExtractionError):
+            extract_labels(as_file(bomb))
+
     def test_rejects_files_without_labels(self) -> None:
         for content in (b"not an export", b"{}", b"[]", json.dumps({"labels": []}).encode()):
             with self.subTest(content=content):

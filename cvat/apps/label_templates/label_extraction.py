@@ -17,7 +17,9 @@ import os
 import zipfile
 from collections.abc import Iterator
 from typing import Any, BinaryIO
-from xml.etree import ElementTree
+
+from defusedxml import ElementTree
+from defusedxml.common import DefusedXmlException
 
 from cvat.apps.engine.models import AttributeType, LabelType
 
@@ -235,6 +237,10 @@ def _extract_from_cvat_xml(content: bytes) -> list[dict[str, Any]]:
         root = ElementTree.fromstring(content)
     except ElementTree.ParseError as ex:
         raise LabelExtractionError(f"The file is not valid XML: {ex}") from ex
+    except DefusedXmlException as ex:
+        # entity expansion and external references are refused by defusedxml,
+        # an export has no use for them anyway
+        raise LabelExtractionError(f"The XML file uses a forbidden feature: {ex}") from ex
 
     meta = root.find("meta")
     if meta is None:
