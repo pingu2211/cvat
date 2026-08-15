@@ -12,6 +12,7 @@ import Text from 'antd/lib/typography/Text';
 import { getCore, Project } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
+import AutoAnnotationModelEditor from 'components/common/auto-annotation-model-editor';
 import UserSelector from 'components/task-page/user-selector';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 
@@ -57,6 +58,15 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         instance={project}
                         onChange={(bugTracker): void => {
                             project.bugTracker = bugTracker;
+                            onUpdateProject(project);
+                        }}
+                    />
+                    <AutoAnnotationModelEditor
+                        functionID={project.autoAnnotationFunction}
+                        threshold={project.autoAnnotationThreshold}
+                        onChange={(functionID, threshold): void => {
+                            project.autoAnnotationFunction = functionID;
+                            project.autoAnnotationThreshold = threshold;
                             onUpdateProject(project);
                         }}
                     />

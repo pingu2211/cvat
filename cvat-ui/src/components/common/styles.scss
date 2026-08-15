@@ -64,3 +64,13 @@
     display: flex;
     justify-content: space-between;
 }
+
+.cvat-auto-annotation-model {
+    margin-bottom: $grid-unit-size;
+    max-width: $grid-unit-size * 60;
+
+    .cvat-auto-annotation-model-selector,
+    .cvat-auto-annotation-model-threshold {
+        width: 100%;
+    }
+}

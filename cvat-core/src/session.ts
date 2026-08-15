@@ -857,6 +857,8 @@ export class Task extends Session {
     public organizationId: number | null;
     public assignee: User | null;
     public bugTracker: string;
+    public autoAnnotationFunction: string;
+    public autoAnnotationThreshold: number | null;
     public subset: string;
     public readonly labels: Label[];
     public sourceStorage: Storage;
@@ -927,6 +929,8 @@ export class Task extends Session {
             created_date: undefined,
             updated_date: undefined,
             bug_tracker: undefined,
+            auto_annotation_function: undefined,
+            auto_annotation_threshold: undefined,
             subset: undefined,
             overlap: undefined,
             segment_size: undefined,
@@ -1104,6 +1108,32 @@ export class Task extends Session {
 
                         updateTrigger.update('bugTracker');
                         data.bug_tracker = tracker;
+                    },
+                },
+                autoAnnotationFunction: {
+                    get: () => data.auto_annotation_function,
+                    set: (functionID) => {
+                        if (typeof functionID !== 'string') {
+                            throw new ArgumentError(
+                                `Auto annotation function must be a string. But ${typeof functionID} has been got.`,
+                            );
+                        }
+
+                        updateTrigger.update('autoAnnotationFunction');
+                        data.auto_annotation_function = functionID;
+                    },
+                },
+                autoAnnotationThreshold: {
+                    get: () => data.auto_annotation_threshold,
+                    set: (threshold) => {
+                        if (threshold !== null && !(typeof threshold === 'number' && threshold >= 0 && threshold <= 1)) {
+                            throw new ArgumentError(
+                                'Auto annotation threshold must be a number within [0; 1] range, or null',
+                            );
+                        }
+
+                        updateTrigger.update('autoAnnotationThreshold');
+                        data.auto_annotation_threshold = threshold;
                     },
                 },
                 subset: {

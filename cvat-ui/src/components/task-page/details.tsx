@@ -20,6 +20,7 @@ import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
+import AutoAnnotationModelEditor from 'components/common/auto-annotation-model-editor';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import CloudStorageEditor from './cloud-storage-editor';
@@ -242,6 +243,18 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                     loadingClassName='cvat-task-item-loading-preview'
                                     emptyPreviewClassName='cvat-task-item-empty-preview'
                                     previewClassName='cvat-task-item-preview'
+                                />
+                            </Col>
+                            <Col span={24}>
+                                <AutoAnnotationModelEditor
+                                    functionID={taskInstance.autoAnnotationFunction}
+                                    threshold={taskInstance.autoAnnotationThreshold}
+                                    projectID={taskInstance.projectId}
+                                    onChange={(functionID, threshold) => {
+                                        taskInstance.autoAnnotationFunction = functionID;
+                                        taskInstance.autoAnnotationThreshold = threshold;
+                                        onUpdateTask(taskInstance);
+                                    }}
                                 />
                             </Col>
                         </Row>

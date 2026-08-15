@@ -20,6 +20,8 @@ export default class Project {
     public organizationId: number | null;
     public assignee: User | null;
     public bugTracker: string;
+    public autoAnnotationFunction: string;
+    public autoAnnotationThreshold: number | null;
     public sourceStorage: Storage;
     public targetStorage: Storage;
     public readonly status: ProjectStatus;
@@ -60,6 +62,8 @@ export default class Project {
             organization_id: undefined,
             owner: undefined,
             bug_tracker: undefined,
+            auto_annotation_function: undefined,
+            auto_annotation_threshold: undefined,
             created_date: undefined,
             updated_date: undefined,
             task_subsets: undefined,
@@ -145,6 +149,32 @@ export default class Project {
                     set: (tracker) => {
                         data.bug_tracker = tracker;
                         updateTrigger.update('bugTracker');
+                    },
+                },
+                autoAnnotationFunction: {
+                    get: () => data.auto_annotation_function,
+                    set: (functionID) => {
+                        if (typeof functionID !== 'string') {
+                            throw new ArgumentError(
+                                `Auto annotation function must be a string. But ${typeof functionID} has been got.`,
+                            );
+                        }
+
+                        data.auto_annotation_function = functionID;
+                        updateTrigger.update('autoAnnotationFunction');
+                    },
+                },
+                autoAnnotationThreshold: {
+                    get: () => data.auto_annotation_threshold,
+                    set: (threshold) => {
+                        if (threshold !== null && !(typeof threshold === 'number' && threshold >= 0 && threshold <= 1)) {
+                            throw new ArgumentError(
+                                'Auto annotation threshold must be a number within [0; 1] range, or null',
+                            );
+                        }
+
+                        data.auto_annotation_threshold = threshold;
+                        updateTrigger.update('autoAnnotationThreshold');
                     },
                 },
                 createdDate: {

@@ -725,6 +725,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 const taskData = {
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
+                        autoAnnotationFunction: 'auto_annotation_function',
+                        autoAnnotationThreshold: 'auto_annotation_threshold',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
                         organizationId: 'organization_id',
@@ -808,6 +810,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             if (typeof this.projectId !== 'undefined') {
                 taskSpec.project_id = this.projectId;
+            }
+
+            if (this.autoAnnotationFunction) {
+                taskSpec.auto_annotation_function = this.autoAnnotationFunction;
+
+                if (typeof this.autoAnnotationThreshold === 'number') {
+                    taskSpec.auto_annotation_threshold = this.autoAnnotationThreshold;
+                }
             }
 
             if (typeof this.subset !== 'undefined') {

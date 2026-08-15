@@ -19,6 +19,8 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             if (typeof this.id !== 'undefined') {
                 const projectData = this._updateTrigger.getUpdated(this, {
                     bugTracker: 'bug_tracker',
+                    autoAnnotationFunction: 'auto_annotation_function',
+                    autoAnnotationThreshold: 'auto_annotation_threshold',
                     assignee: 'assignee_id',
                     organizationId: 'organization_id',
                     sourceStorage: 'source_storage',
@@ -88,6 +90,14 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
 
             if (this.sourceStorage) {
                 projectSpec.source_storage = this.sourceStorage.toJSON();
+            }
+
+            if (this.autoAnnotationFunction) {
+                projectSpec.auto_annotation_function = this.autoAnnotationFunction;
+
+                if (typeof this.autoAnnotationThreshold === 'number') {
+                    projectSpec.auto_annotation_threshold = this.autoAnnotationThreshold;
+                }
             }
 
             const project = await serverProxy.projects.create(projectSpec);
