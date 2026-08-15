@@ -22,12 +22,27 @@ spec:
     container.
   runtime: 'python:3.10'
   handler: main:handler
+  # On CPU a single frame takes minutes, not seconds. The CVAT server applies a timeout
+  # of its own to synchronous (interactive) calls, so raising this alone is not enough -
+  # CVAT_NUCLIO_DEFAULT_TIMEOUT has to be at least as large, see
+  # components/serverless/docker-compose.serverless.yml.
   eventTimeout: 300s
   env:
     - name: PYTHONPATH
       value: /opt/nuclio/sam3-detector
     - name: HUGGING_FACE_HUB_TOKEN
       value: ''
+    # Resolution the vision encoder runs at; empty means the checkpoint's own 1008. The
+    # encoder is the bulk of the inference time and its cost scales with the number of
+    # patches, so 560 is about three times cheaper, at the price of some accuracy on
+    # small objects - worth setting on a CPU deployment that is too slow to be usable.
+    - name: SAM3_IMAGE_SIZE
+      value: ''
+    # float32, bfloat16 or float16. bfloat16 halves the memory the weights need and is
+    # faster only on CPUs with AVX512-BF16 or AMX support; elsewhere it is emulated and
+    # ends up slower than float32.
+    - name: SAM3_DTYPE
+      value: 'float32'
 
   build:
     image: cvat.pth.facebookresearch.sam3_detector
@@ -49,14 +64,19 @@ spec:
       # Hugging Face); they are downloaded at container startup using the token supplied
       # via the HUGGING_FACE_HUB_TOKEN environment variable, so the container needs
       # outbound network access to huggingface.co.
+      # The CPU-only wheels skip the bundled CUDA runtime, which this function can never
+      # use: that is several GB less image to build, pull and page in at startup.
         - kind: RUN
-          value: pip3 install torch torchvision --no-cache-dir
+          value: pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cpu --no-cache-dir
         - kind: RUN
           value: pip3 install "transformers>=5.14.0" pillow numpy --no-cache-dir
 
   triggers:
     myHttpTrigger:
-      numWorkers: 2
+      # Every worker loads its own copy of the model - several GB on CPU - and builds
+      # its own thread pool over the same cores, so a second one buys concurrency at the
+      # cost of swapping and of the workers competing for cores. Requests queue instead.
+      numWorkers: 1
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

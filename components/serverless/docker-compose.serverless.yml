@@ -22,9 +22,16 @@ services:
   cvat_server:
     environment:
       CVAT_SERVERLESS: 1
+      # How long the server waits for a function to answer. Interactors and detectors
+      # invoked from the annotation UI are called synchronously, so this is what limits
+      # them, and CPU-only models such as SAM3 need several minutes, where the default
+      # is two. Keep it in sync with the eventTimeout of the slowest deployed function.
+      CVAT_NUCLIO_DEFAULT_TIMEOUT: ${CVAT_NUCLIO_DEFAULT_TIMEOUT:-300}
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
   cvat_worker_annotation:
+    environment:
+      CVAT_NUCLIO_DEFAULT_TIMEOUT: ${CVAT_NUCLIO_DEFAULT_TIMEOUT:-300}
     extra_hosts:
       - "host.docker.internal:host-gateway"
