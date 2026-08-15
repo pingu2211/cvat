@@ -6,6 +6,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2026-05-11T17:25:43.375000Z",
@@ -54,6 +56,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2025-11-13T11:32:48.132000Z",
@@ -111,6 +115,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2025-08-01T11:44:46.343000Z",
@@ -168,6 +174,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2025-05-05T15:35:00.337000Z",
@@ -217,6 +225,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2025-05-05T15:35:00.112000Z",
@@ -266,6 +276,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": true,
       "created_date": "2025-01-27T16:42:31.302000Z",
@@ -323,6 +335,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": true,
       "created_date": "2025-01-14T17:19:03.665000Z",
@@ -380,6 +394,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-10-01T12:36:21.364000Z",
@@ -429,6 +445,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-09-23T21:42:22.676000Z",
@@ -492,6 +510,8 @@
         "username": "user4"
       },
       "assignee_updated_date": "2024-09-23T10:52:48.769000Z",
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-09-23T10:52:04.357000Z",
@@ -555,6 +575,8 @@
         "username": "user7"
       },
       "assignee_updated_date": "2024-09-23T10:51:45.525000Z",
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-09-23T10:51:32.778000Z",
@@ -612,6 +634,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-07-15T15:34:53.156000Z",
@@ -669,6 +693,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-07-15T15:33:10.135000Z",
@@ -726,6 +752,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2024-03-21T20:50:05.694000Z",
@@ -775,6 +803,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2023-05-26T16:11:23.540000Z",
@@ -824,6 +854,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2023-03-27T19:08:07.649000Z",
@@ -881,6 +913,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2023-03-10T11:57:31.614000Z",
@@ -938,6 +972,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2023-03-10T11:56:33.757000Z",
@@ -995,6 +1031,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2023-03-01T15:36:26.668000Z",
@@ -1058,6 +1096,8 @@
         "username": "user2"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2023-02-10T14:05:25.947000Z",
@@ -1107,6 +1147,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-12-01T12:53:10.425000Z",
@@ -1164,6 +1206,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
       "consensus_enabled": false,
       "created_date": "2022-09-22T14:22:25.820000Z",
@@ -1227,6 +1271,8 @@
         "username": "user3"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-06-08T08:33:06.505000Z",
@@ -1276,6 +1322,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-03-14T13:24:05.852000Z",
@@ -1325,6 +1373,8 @@
         "username": "user5"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-03-05T10:32:19.149000Z",
@@ -1388,6 +1438,8 @@
         "username": "admin1"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-03-05T09:33:10.420000Z",
@@ -1443,6 +1495,8 @@
         "username": "worker4"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-03-05T08:30:48.612000Z",
@@ -1498,6 +1552,8 @@
         "username": "worker2"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-02-21T10:31:52.429000Z",
@@ -1547,6 +1603,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-02-16T06:26:54.631000Z",
@@ -1602,6 +1660,8 @@
         "username": "dummy2"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2022-02-16T06:25:48.168000Z",
@@ -1657,6 +1717,8 @@
         "username": "worker2"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "consensus_enabled": false,
       "created_date": "2021-12-14T18:50:29.458000Z",

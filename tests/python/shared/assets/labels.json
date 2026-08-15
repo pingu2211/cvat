@@ -10,6 +10,7 @@
       "id": 3,
       "name": "car",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 2,
       "type": "any"
@@ -21,6 +22,7 @@
       "id": 4,
       "name": "person",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 2,
       "type": "any"
@@ -46,6 +48,7 @@
       "name": "car",
       "parent_id": null,
       "project_id": 1,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -57,6 +60,7 @@
       "name": "person",
       "parent_id": null,
       "project_id": 1,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -68,6 +72,7 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 2,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -79,6 +84,7 @@
       "name": "dog",
       "parent_id": null,
       "project_id": 2,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -89,6 +95,7 @@
       "id": 9,
       "name": "car",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 5,
       "type": "any"
@@ -100,6 +107,7 @@
       "id": 10,
       "name": "car",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 6,
       "type": "any"
@@ -111,6 +119,7 @@
       "id": 11,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 7,
       "type": "any"
@@ -122,6 +131,7 @@
       "id": 12,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 7,
       "type": "any"
@@ -133,6 +143,7 @@
       "id": 13,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 8,
       "type": "any"
@@ -144,6 +155,7 @@
       "id": 14,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 8,
       "type": "any"
@@ -155,6 +167,7 @@
       "id": 15,
       "name": "Car",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 12,
       "type": "any"
@@ -167,6 +180,7 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 4,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -178,6 +192,7 @@
       "name": "dog",
       "parent_id": null,
       "project_id": 4,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -189,6 +204,7 @@
       "name": "s1",
       "parent_id": null,
       "project_id": 5,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -196,6 +212,7 @@
           "has_parent": true,
           "id": 19,
           "name": "1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -204,6 +221,7 @@
           "has_parent": true,
           "id": 20,
           "name": "2",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -212,6 +230,7 @@
           "has_parent": true,
           "id": 21,
           "name": "3",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -238,6 +257,7 @@
       "name": "s2",
       "parent_id": null,
       "project_id": 5,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -245,6 +265,7 @@
           "has_parent": true,
           "id": 23,
           "name": "1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -253,6 +274,7 @@
           "has_parent": true,
           "id": 24,
           "name": "2",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -273,6 +295,7 @@
           "has_parent": true,
           "id": 25,
           "name": "3",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -281,6 +304,7 @@
           "has_parent": true,
           "id": 26,
           "name": "4",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -295,6 +319,7 @@
       "name": "label_0",
       "parent_id": null,
       "project_id": 6,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -306,6 +331,7 @@
       "name": "label_0",
       "parent_id": null,
       "project_id": 7,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -317,6 +343,7 @@
       "name": "car",
       "parent_id": null,
       "project_id": 8,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -328,6 +355,7 @@
       "name": "person",
       "parent_id": null,
       "project_id": 8,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -339,6 +367,7 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 10,
+      "prompt": "",
       "sublabels": [],
       "type": "rectangle"
     },
@@ -361,6 +390,7 @@
       "name": "dog",
       "parent_id": null,
       "project_id": 10,
+      "prompt": "",
       "sublabels": [],
       "type": "polyline"
     },
@@ -371,6 +401,7 @@
       "id": 38,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 17,
       "type": "any"
@@ -382,6 +413,7 @@
       "id": 39,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 17,
       "type": "any"
@@ -404,6 +436,7 @@
       "id": 40,
       "name": "skele1",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -411,6 +444,7 @@
           "has_parent": true,
           "id": 41,
           "name": "1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -419,6 +453,7 @@
           "has_parent": true,
           "id": 42,
           "name": "2",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -427,6 +462,7 @@
           "has_parent": true,
           "id": 43,
           "name": "3",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -435,6 +471,7 @@
           "has_parent": true,
           "id": 44,
           "name": "4",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -443,6 +480,7 @@
           "has_parent": true,
           "id": 45,
           "name": "5",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -458,6 +496,7 @@
       "name": "skeleton 1",
       "parent_id": null,
       "project_id": 11,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -465,6 +504,7 @@
           "has_parent": true,
           "id": 47,
           "name": "label 1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -473,6 +513,7 @@
           "has_parent": true,
           "id": 48,
           "name": "label with multiple spaces in the name",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -481,6 +522,7 @@
           "has_parent": true,
           "id": 49,
           "name": "label 3",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -489,6 +531,7 @@
           "has_parent": true,
           "id": 50,
           "name": "4",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -513,6 +556,7 @@
       "id": 51,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 19,
       "type": "any"
@@ -537,6 +581,7 @@
       "id": 52,
       "name": "car",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 19,
       "type": "any"
@@ -560,6 +605,7 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 12,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -584,6 +630,7 @@
       "name": "car",
       "parent_id": null,
       "project_id": 12,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -606,6 +653,7 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 13,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -630,6 +678,7 @@
       "name": "car",
       "parent_id": null,
       "project_id": 13,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -640,6 +689,7 @@
       "id": 57,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 21,
       "type": "any"
@@ -651,6 +701,7 @@
       "id": 58,
       "name": "skeleton1",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -658,6 +709,7 @@
           "has_parent": true,
           "id": 59,
           "name": "1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -666,6 +718,7 @@
           "has_parent": true,
           "id": 60,
           "name": "2",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -674,6 +727,7 @@
           "has_parent": true,
           "id": 61,
           "name": "3",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -682,6 +736,7 @@
           "has_parent": true,
           "id": 62,
           "name": "4",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -696,6 +751,7 @@
       "id": 63,
       "name": "skeleton",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -703,6 +759,7 @@
           "has_parent": true,
           "id": 64,
           "name": "1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -711,6 +768,7 @@
           "has_parent": true,
           "id": 65,
           "name": "2",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -725,6 +783,7 @@
       "id": 66,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 22,
       "type": "any"
@@ -758,6 +817,7 @@
       "id": 67,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 22,
       "type": "any"
@@ -769,6 +829,7 @@
       "id": 68,
       "name": "skele",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -776,6 +837,7 @@
           "has_parent": true,
           "id": 69,
           "name": "1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -784,6 +846,7 @@
           "has_parent": true,
           "id": 70,
           "name": "2",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -792,6 +855,7 @@
           "has_parent": true,
           "id": 71,
           "name": "3",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -800,6 +864,7 @@
           "has_parent": true,
           "id": 72,
           "name": "4",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -814,6 +879,7 @@
       "id": 73,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 23,
       "type": "any"
@@ -825,6 +891,7 @@
       "id": 74,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 23,
       "type": "any"
@@ -836,6 +903,7 @@
       "id": 75,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 26,
       "type": "any"
@@ -847,6 +915,7 @@
       "id": 76,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 27,
       "type": "any"
@@ -869,6 +938,7 @@
       "id": 77,
       "name": "label",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 29,
       "type": "any"
@@ -891,6 +961,7 @@
       "id": 78,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 30,
       "type": "any"
@@ -913,6 +984,7 @@
       "id": 79,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 30,
       "type": "any"
@@ -935,6 +1007,7 @@
       "id": 80,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 31,
       "type": "any"
@@ -947,6 +1020,7 @@
       "name": "cat",
       "parent_id": null,
       "project_id": 17,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -958,6 +1032,7 @@
       "name": "dog",
       "parent_id": null,
       "project_id": 17,
+      "prompt": "",
       "sublabels": [],
       "type": "any"
     },
@@ -968,6 +1043,7 @@
       "id": 83,
       "name": "cat",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 34,
       "type": "any"
@@ -979,6 +1055,7 @@
       "id": 84,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 34,
       "type": "any"
@@ -990,6 +1067,7 @@
       "id": 85,
       "name": "skel",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [
         {
           "attributes": [],
@@ -997,6 +1075,7 @@
           "has_parent": true,
           "id": 86,
           "name": "p1",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -1005,6 +1084,7 @@
           "has_parent": true,
           "id": 87,
           "name": "p2",
+          "prompt": "",
           "type": "points"
         },
         {
@@ -1013,6 +1093,7 @@
           "has_parent": true,
           "id": 88,
           "name": "p3",
+          "prompt": "",
           "type": "points"
         }
       ],
@@ -1027,6 +1108,7 @@
       "id": 89,
       "name": "skelp3",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 34,
       "type": "any"
@@ -1038,6 +1120,7 @@
       "id": 90,
       "name": "dog",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 31,
       "type": "any"
@@ -1050,6 +1133,7 @@
       "name": "tag1",
       "parent_id": null,
       "project_id": 18,
+      "prompt": "",
       "sublabels": [],
       "type": "tag"
     },
@@ -1061,6 +1145,7 @@
       "name": "tag2",
       "parent_id": null,
       "project_id": 18,
+      "prompt": "",
       "sublabels": [],
       "type": "tag"
     },
@@ -1093,6 +1178,7 @@
       "id": 93,
       "name": "event",
       "parent_id": null,
+      "prompt": "",
       "sublabels": [],
       "task_id": 36,
       "type": "interval"

@@ -6,6 +6,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2025-11-13T11:32:07.581000Z",
       "dimension": "2d",
@@ -46,6 +48,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2025-05-05T15:35:00.036000Z",
       "dimension": "2d",
@@ -84,6 +88,8 @@
         "username": "user7"
       },
       "assignee_updated_date": "2024-09-23T08:09:45.461000Z",
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2024-09-23T08:09:42.827000Z",
       "dimension": null,
@@ -130,6 +136,8 @@
         "username": "user4"
       },
       "assignee_updated_date": "2024-09-22T20:40:23.452000Z",
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2024-09-22T20:40:15.423000Z",
       "dimension": null,
@@ -170,6 +178,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2024-07-15T15:29:04.426000Z",
       "dimension": "2d",
@@ -213,6 +223,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2023-03-10T11:58:04.216000Z",
       "dimension": null,
@@ -253,6 +265,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2023-03-10T11:57:14.944000Z",
       "dimension": "2d",
@@ -293,6 +307,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2023-03-01T15:36:11.840000Z",
       "dimension": "2d",
@@ -339,6 +355,8 @@
         "username": "worker3"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2023-02-10T11:42:43.192000Z",
       "dimension": "2d",
@@ -379,6 +397,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2022-12-01T12:52:42.454000Z",
       "dimension": "2d",
@@ -425,6 +445,8 @@
         "username": "worker4"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2022-09-28T12:26:25.296000Z",
       "dimension": null,
@@ -471,6 +493,8 @@
         "username": "user10"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2022-09-28T12:15:50.768000Z",
       "dimension": null,
@@ -511,6 +535,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2022-09-22T14:21:53.791000Z",
       "dimension": "2d",
@@ -551,6 +577,8 @@
     {
       "assignee": null,
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2022-06-08T08:32:45.521000Z",
       "dimension": "2d",
@@ -589,6 +617,8 @@
         "username": "user5"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2022-03-28T13:05:24.659000Z",
       "dimension": null,
@@ -627,6 +657,8 @@
         "username": "user2"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2021-12-14T19:52:37.278000Z",
       "dimension": "2d",
@@ -675,6 +707,8 @@
         "username": "user6"
       },
       "assignee_updated_date": null,
+      "auto_annotation_function": "",
+      "auto_annotation_threshold": null,
       "bug_tracker": "",
       "created_date": "2021-12-14T19:46:37.969000Z",
       "dimension": "2d",
