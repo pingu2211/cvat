@@ -725,6 +725,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 const taskData = {
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
+                        autoAnnotationFunction: 'auto_annotation_function',
+                        autoAnnotationThreshold: 'auto_annotation_threshold',
                         projectId: 'project_id',
                         assignee: 'assignee_id',
                         organizationId: 'organization_id',

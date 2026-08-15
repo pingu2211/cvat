@@ -79,6 +79,8 @@ interface SerializedStorage {
 export interface SerializedProject {
     assignee: SerializedUser | null;
     id: number;
+    auto_annotation_function: string;
+    auto_annotation_threshold: number | null;
     bug_tracker: string;
     created_date: string;
     updated_date: string;
@@ -103,6 +105,8 @@ export type JobsFilter = ProjectsFilter & {
 
 export interface SerializedTask {
     assignee: SerializedUser | null;
+    auto_annotation_function: string;
+    auto_annotation_threshold: number | null;
     bug_tracker: string;
     created_date: string;
     data: number;

@@ -19,6 +19,8 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
             if (typeof this.id !== 'undefined') {
                 const projectData = this._updateTrigger.getUpdated(this, {
                     bugTracker: 'bug_tracker',
+                    autoAnnotationFunction: 'auto_annotation_function',
+                    autoAnnotationThreshold: 'auto_annotation_threshold',
                     assignee: 'assignee_id',
                     organizationId: 'organization_id',
                     sourceStorage: 'source_storage',

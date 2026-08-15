@@ -22,6 +22,7 @@ import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
+import AutoAnnotationModelEditor from './auto-annotation-model-editor';
 import CloudStorageEditor from './cloud-storage-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
@@ -263,6 +264,20 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 <AutomaticAnnotationProgress
                                     activeInference={activeInference}
                                     cancelAutoAnnotation={cancelAutoAnnotation}
+                                />
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col span={24}>
+                                <AutoAnnotationModelEditor
+                                    functionID={taskInstance.autoAnnotationFunction}
+                                    threshold={taskInstance.autoAnnotationThreshold}
+                                    projectID={taskInstance.projectId}
+                                    onChange={(functionID, threshold) => {
+                                        taskInstance.autoAnnotationFunction = functionID;
+                                        taskInstance.autoAnnotationThreshold = threshold;
+                                        onUpdateTask(taskInstance);
+                                    }}
                                 />
                             </Col>
                         </Row>
