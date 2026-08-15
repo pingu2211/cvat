@@ -65,15 +65,24 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
 
     useEffect(() => {
+        // the dialog is reachable from lists of resources belonging to different tasks,
+        // so drop the previously fetched task to avoid showing its labels while the new one is loading
+        let outdated = false;
+        setTaskInstance(null);
+
         if (task) {
             core.tasks.get({ id: task.id }).then(([_task]: Task[]) => {
-                if (_task) {
+                if (!outdated && _task) {
                     setTaskInstance(_task);
                 }
             }).catch((error: any) => {
-                notification.error({ message: 'Could not get task details', description: error.toString() });
+                if (!outdated) {
+                    notification.error({ message: 'Could not get task details', description: error.toString() });
+                }
             });
         }
+
+        return () => { outdated = true; };
     }, [visible, task]);
 
     return (
