@@ -119,9 +119,12 @@ export default function AutoAnnotationModelEditor(props: Props): JSX.Element {
                     value={functionID}
                     options={options}
                     onChange={(value: string) => {
-                        // the threshold is meaningless without a function; when a function is
-                        // picked while inheriting one, the inherited threshold seeds the new value
-                        const currentThreshold = inheritedFunctionID ? inheritedThreshold : threshold;
+                        // The threshold is meaningless without a function. When a function is
+                        // picked while inheriting one, the inherited threshold seeds the new
+                        // value; otherwise the value being edited carries over, which matters
+                        // because changing the model blurs the threshold field and would
+                        // otherwise discard whatever was typed into it.
+                        const currentThreshold = inheritedFunctionID ? inheritedThreshold : draftThreshold;
                         onChange(value, value ? currentThreshold : null);
                     }}
                 />
