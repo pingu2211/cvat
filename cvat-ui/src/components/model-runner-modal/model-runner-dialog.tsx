@@ -22,6 +22,7 @@ const core = getCore();
 interface StateToProps {
     visible: boolean;
     task: any;
+    jobID: number | null;
     detectors: MLModel[];
     reid: MLModel[];
 }
@@ -38,6 +39,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         visible: models.modelRunnerIsVisible,
         task: models.modelRunnerTask,
+        jobID: models.modelRunnerJobID,
         reid,
         detectors,
     };
@@ -56,7 +58,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
-        reid, detectors, task, visible, runInference, closeDialog,
+        reid, detectors, task, jobID, visible, runInference, closeDialog,
     } = props;
 
     const models = [...reid, ...detectors];
@@ -81,7 +83,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             footer={[]}
             onCancel={(): void => closeDialog()}
             maskClosable
-            title='Automatic annotation'
+            title={jobID === null ? 'Automatic annotation' : `Automatic annotation (job #${jobID})`}
         >
             { taskInstance ? (
                 <DetectorRunner
@@ -89,9 +91,9 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
                     models={models}
                     labels={taskInstance.labels}
                     dimension={taskInstance.dimension}
-                    runInference={(...args) => {
+                    runInference={(model, body) => {
                         closeDialog();
-                        runInference(taskInstance.id, ...args);
+                        runInference(taskInstance.id, model, jobID === null ? body : { ...body, job: jobID });
                     }}
                 />
             ) : <CVATLoadingSpinner /> }
