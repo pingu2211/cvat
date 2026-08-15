@@ -94,10 +94,18 @@ class LabelTemplateWriteSerializer(serializers.ModelSerializer):
             complete.is_valid(raise_exception=True)
             value = complete.validated_data
 
-        names = [label["name"] for label in value]
-        duplicates = sorted({name for name in names if names.count(name) > 1})
+        seen = set()
+        duplicates = set()
+        for label in value:
+            name = label["name"]
+            if name in seen:
+                duplicates.add(name)
+            seen.add(name)
+
         if duplicates:
-            raise serializers.ValidationError(f"Label names must be unique, got: {duplicates}")
+            raise serializers.ValidationError(
+                f"Label names must be unique, got: {sorted(duplicates)}"
+            )
 
         return value
 
