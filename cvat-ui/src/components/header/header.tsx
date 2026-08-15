@@ -474,7 +474,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/label-templates');
                     }}
                 >
-                    Label templates
+                    Templates
                 </Button>
                 <Button
                     className={getButtonClassName('models')}
