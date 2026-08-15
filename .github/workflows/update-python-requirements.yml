@@ -1,11 +1,9 @@
 name: Update Python requirements
 
+# Disabled from automatic triggering (personal project; requires bot app secrets not
+# configured here). Kept dispatchable for reference.
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - "cvat/requirements/*.in"
-      - "utils/dataset_manifest/requirements.in"
+  workflow_dispatch:
 
 permissions:
   contents: read

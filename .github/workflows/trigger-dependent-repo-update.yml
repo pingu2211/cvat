@@ -1,9 +1,8 @@
 name: Trigger dependent repo update workflow
 
+# Push trigger disabled (personal project, no dependent repo to keep in sync; kept dispatchable).
 on:
   workflow_dispatch:
-  push:
-    branches: [ develop ]
 
 jobs:
   trigger:

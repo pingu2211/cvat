@@ -1,7 +1,8 @@
 name: Comment
+# Disabled from automatic triggering (personal project, no other collaborators to review via /check comments).
+# Kept dispatchable for reference.
 on:
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
 
 env:
   WORKFLOW_RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

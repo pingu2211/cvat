@@ -1,7 +1,7 @@
 name: CI-nightly
+# Nightly cron disabled (personal project, don't need a full test sweep every night).
+# Kept dispatchable in case a full run is ever wanted on demand.
 on:
-  schedule:
-    - cron: '0 22 * * *'
   workflow_dispatch:
 
 env:
