@@ -53,6 +53,13 @@ export interface APIApiTokensFilter extends APICommonFilterParams {
 }
 export type ApiTokensFilter = CamelizedV2<APIApiTokensFilter>;
 
+export interface APILabelTemplatesFilter extends APICommonFilterParams {
+    id?: number;
+    name?: string;
+    owner?: string;
+}
+export type LabelTemplatesFilter = CamelizedV2<APILabelTemplatesFilter>;
+
 export interface SerializedUser {
     url: string;
     id: number;
@@ -196,6 +203,17 @@ export interface SerializedLabel {
     has_parent?: boolean;
     attributes: SerializedAttribute[];
     prompt?: string;
+}
+
+export interface SerializedLabelTemplate {
+    id?: number;
+    name: string;
+    description?: string;
+    labels: SerializedLabel[];
+    owner?: SerializedUser;
+    organization?: number | null;
+    created_date?: string;
+    updated_date?: string;
 }
 
 export interface SerializedAbout {

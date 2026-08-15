@@ -2987,6 +2987,275 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobValidationLayoutRead'
           description: ''
+  /api/label-templates:
+    get:
+      operationId: label_templates_list
+      summary: List label templates
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'name', 'owner', 'updated_date'].
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: A simple equality filter for the name field
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: owner
+        in: query
+        description: A simple equality filter for the owner field
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: 'A search term. Available search_fields: [''description'', ''name'',
+          ''owner'']'
+        schema:
+          type: string
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'', ''name'', ''owner'', ''updated_date'']'
+        schema:
+          type: string
+      tags:
+      - label templates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLabelTemplateReadList'
+          description: ''
+    post:
+      operationId: label_templates_create
+      summary: Create a label template
+      parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: Organization unique slug
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: Organization identifier
+      tags:
+      - label templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelTemplateWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/LabelTemplateRead'
+          description: ''
+  /api/label-templates/{id}:
+    get:
+      operationId: label_templates_retrieve
+      summary: Get label template details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label template.
+        required: true
+      tags:
+      - label templates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/LabelTemplateRead'
+          description: ''
+    put:
+      operationId: label_templates_update
+      summary: Replace a label template
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label template.
+        required: true
+      tags:
+      - label templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelTemplateWriteRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/LabelTemplateRead'
+          description: ''
+    patch:
+      operationId: label_templates_partial_update
+      summary: Update a label template
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label template.
+        required: true
+      tags:
+      - label templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLabelTemplateWriteRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/LabelTemplateRead'
+          description: ''
+    delete:
+      operationId: label_templates_destroy
+      summary: Delete a label template
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label template.
+        required: true
+      tags:
+      - label templates
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The label template has been deleted
+  /api/label-templates/extract-labels:
+    post:
+      operationId: label_templates_create_extract_labels
+      description: Returns the label specification described by an uploaded file,
+        without creating a template from it. Annotations in the file are ignored.
+      summary: Read the labels of a file exported from CVAT
+      tags:
+      - label templates
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LabelExtractionRequestRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ExtractedLabels'
+          description: ''
   /api/labels:
     get:
       operationId: labels_list
@@ -8175,6 +8444,15 @@ components:
         * `update:organization` - UPDATE:ORGANIZATION
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
+    ExtractedLabels:
+      type: object
+      description: The labels found in an uploaded file, ready to be saved as a template.
+      properties:
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateLabel'
+          readOnly: true
     FileInfo:
       type: object
       properties:
@@ -8803,6 +9081,17 @@ components:
           maxLength: 1024
       required:
       - name
+    LabelExtractionRequestRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          description: 'A file exported from CVAT: a task or project backup, a backup
+            annotations.json, CVAT-for-images/video XML, a Datumaro or COCO annotation
+            file, or a ZIP archive containing any of these.'
+      required:
+      - file
     LabelMappingEntryRequest:
       type: object
       properties:
@@ -8821,6 +9110,57 @@ components:
           description: Label mapping for from the model to the task sublabels within
             a parent label
       required:
+      - name
+    LabelTemplateRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateLabel'
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+          nullable: true
+        organization:
+          type: integer
+          readOnly: true
+          nullable: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+    LabelTemplateWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 1024
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateLabelRequest'
+      required:
+      - labels
       - name
     LabelType:
       enum:
@@ -9578,6 +9918,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Label'
+    PaginatedLabelTemplateReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelTemplateRead'
     PaginatedMembershipReadList:
       type: object
       required:
@@ -10071,6 +10434,20 @@ components:
           description: A free-text prompt associated with the label, used by text-prompt-driven
             models (e.g. SAM3) to detect matching objects.
           maxLength: 1024
+    PatchedLabelTemplateWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 256
+        description:
+          type: string
+          maxLength: 1024
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateLabelRequest'
     PatchedLabeledDataRequest:
       type: object
       properties:
@@ -11834,6 +12211,169 @@ components:
           type: string
           format: uri
           readOnly: true
+    TemplateAttribute:
+      type: object
+      description: An attribute specification, in the shape the project and task APIs
+        accept.
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        mutable:
+          type: boolean
+          default: false
+        input_type:
+          $ref: '#/components/schemas/InputTypeEnum'
+        default_value:
+          type: string
+          default: ''
+          maxLength: 128
+        values:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+      required:
+      - input_type
+      - name
+    TemplateAttributeRequest:
+      type: object
+      description: An attribute specification, in the shape the project and task APIs
+        accept.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        mutable:
+          type: boolean
+          default: false
+        input_type:
+          $ref: '#/components/schemas/InputTypeEnum'
+        default_value:
+          type: string
+          default: ''
+          maxLength: 128
+        values:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+      required:
+      - input_type
+      - name
+    TemplateLabel:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        color:
+          type: string
+          default: ''
+          maxLength: 8
+        type:
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          default: any
+        prompt:
+          type: string
+          default: ''
+          maxLength: 1024
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateAttribute'
+        sublabels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSublabel'
+        svg:
+          type: string
+          default: ''
+      required:
+      - name
+    TemplateLabelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        color:
+          type: string
+          default: ''
+          maxLength: 8
+        type:
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          default: any
+        prompt:
+          type: string
+          default: ''
+          maxLength: 1024
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateAttributeRequest'
+        sublabels:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateSublabelRequest'
+        svg:
+          type: string
+          default: ''
+      required:
+      - name
+    TemplateSublabel:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 64
+        color:
+          type: string
+          default: ''
+          maxLength: 8
+        type:
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          default: any
+        prompt:
+          type: string
+          default: ''
+          maxLength: 1024
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateAttribute'
+      required:
+      - name
+    TemplateSublabelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        color:
+          type: string
+          default: ''
+          maxLength: 8
+        type:
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          default: any
+        prompt:
+          type: string
+          default: ''
+          maxLength: 1024
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateAttributeRequest'
+      required:
+      - name
     Token:
       type: object
       description: Serializer for Token model.

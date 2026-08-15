@@ -127,6 +127,21 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         this.handleSubmit(savedLabels, newUnsavedLabels).catch(() => {});
     };
 
+    private handleCreateMany = (labels: LabelOptColor[]): void => {
+        const { unsavedLabels, savedLabels, submitting } = this.state;
+        if (submitting || !labels.length) {
+            return;
+        }
+
+        const newUnsavedLabels = [
+            ...unsavedLabels,
+            ...labels.map((label) => ({ ...label, id: idGenerator() })),
+        ];
+
+        this.setState({ unsavedLabels: newUnsavedLabels });
+        this.handleSubmit(savedLabels, newUnsavedLabels).catch(() => {});
+    };
+
     private handleUpdate = (label: LabelOptColor): void => {
         const { savedLabels, unsavedLabels, submitting } = this.state;
         if (submitting) {
@@ -329,6 +344,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     creatorType={creatorType}
                     labelNames={labels.map((l) => l.name)}
                     onCreate={this.handleCreate}
+                    onCreateMany={this.handleCreateMany}
                     onCancel={this.handlerCancel}
                     showLabelType={showLabelType}
                 />

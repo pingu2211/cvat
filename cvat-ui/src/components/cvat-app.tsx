@@ -52,6 +52,7 @@ import CreateOrganizationComponent from 'components/create-organization-page/cre
 import { ShortcutsContextProvider } from 'components/shortcuts.context';
 
 import WebhooksPage from 'components/webhooks-page/webhooks-page';
+import LabelTemplatesPage from 'components/label-templates-page/label-templates-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
@@ -555,6 +556,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization/webhooks' component={WebhooksPage} />
                                         <Route exact path='/webhooks/create' component={CreateWebhookPage} />
                                         <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
+                                        <Route exact path='/label-templates' component={LabelTemplatesPage} />
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
