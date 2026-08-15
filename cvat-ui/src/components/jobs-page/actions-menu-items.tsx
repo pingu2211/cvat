@@ -16,9 +16,11 @@ interface MenuItemsData {
     projectId: number | null;
     pluginActions: ReturnType<typeof usePlugins>;
     isMergingConsensusEnabled: boolean;
+    isAutomaticAnnotationEnabled: boolean;
     onOpenBugTracker: (() => void) | null;
     onImportAnnotations: () => void;
     onExportAnnotations: () => void;
+    onRunAutoAnnotation: (() => void) | null;
     onMergeConsensusJob: (() => void) | null;
     onDeleteJob: (() => void) | null;
     onGoToParent: (() => void) | null;
@@ -37,6 +39,7 @@ enum MenuKeys {
     GO_TO_REPLICAS = 'go_to_replicas',
     VIEW_ANALYTICS = 'view-analytics',
     MERGE_SPECIFIC_CONSENSUS_JOBS = 'merge_specific_consensus_jobs',
+    RUN_AUTO_ANNOTATION = 'run_auto_annotation',
     IMPORT_JOB = 'import_job',
     BUG_TRACKER = 'bug_tracker',
     PROJECT = 'project',
@@ -54,9 +57,11 @@ export default function JobActionsItems(
         projectId,
         pluginActions,
         isMergingConsensusEnabled,
+        isAutomaticAnnotationEnabled,
         onOpenBugTracker,
         onImportAnnotations,
         onExportAnnotations,
+        onRunAutoAnnotation,
         onMergeConsensusJob,
         onDeleteJob,
         jobsToAct,
@@ -142,6 +147,15 @@ export default function JobActionsItems(
         label: withCount('Export annotations', MenuKeys.EXPORT_JOB),
         disabled: isDisabled(MenuKeys.EXPORT_JOB),
     }, 60]);
+
+    if (onRunAutoAnnotation) {
+        menuItems.push([{
+            key: MenuKeys.RUN_AUTO_ANNOTATION,
+            onClick: onRunAutoAnnotation,
+            label: withCount('Automatic annotation', MenuKeys.RUN_AUTO_ANNOTATION),
+            disabled: isAutomaticAnnotationEnabled || isDisabled(MenuKeys.RUN_AUTO_ANNOTATION),
+        }, 65]);
+    }
 
     if (onMergeConsensusJob) {
         menuItems.push([{

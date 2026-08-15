@@ -22,6 +22,7 @@ const core = getCore();
 interface StateToProps {
     visible: boolean;
     task: any;
+    jobID: number | null;
     detectors: MLModel[];
     reid: MLModel[];
 }
@@ -38,6 +39,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         visible: models.modelRunnerIsVisible,
         task: models.modelRunnerTask,
+        jobID: models.modelRunnerJobID,
         reid,
         detectors,
     };
@@ -56,22 +58,31 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
-        reid, detectors, task, visible, runInference, closeDialog,
+        reid, detectors, task, jobID, visible, runInference, closeDialog,
     } = props;
 
     const models = [...reid, ...detectors];
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
 
     useEffect(() => {
+        // the dialog is reachable from lists of resources belonging to different tasks,
+        // so drop the previously fetched task to avoid showing its labels while the new one is loading
+        let outdated = false;
+        setTaskInstance(null);
+
         if (task) {
             core.tasks.get({ id: task.id }).then(([_task]: Task[]) => {
-                if (_task) {
+                if (!outdated && _task) {
                     setTaskInstance(_task);
                 }
             }).catch((error: any) => {
-                notification.error({ message: 'Could not get task details', description: error.toString() });
+                if (!outdated) {
+                    notification.error({ message: 'Could not get task details', description: error.toString() });
+                }
             });
         }
+
+        return () => { outdated = true; };
     }, [visible, task]);
 
     return (
@@ -81,7 +92,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             footer={[]}
             onCancel={(): void => closeDialog()}
             maskClosable
-            title='Automatic annotation'
+            title={jobID === null ? 'Automatic annotation' : `Automatic annotation (job #${jobID})`}
         >
             { taskInstance ? (
                 <DetectorRunner
@@ -89,9 +100,9 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
                     models={models}
                     labels={taskInstance.labels}
                     dimension={taskInstance.dimension}
-                    runInference={(...args) => {
+                    runInference={(model, body) => {
                         closeDialog();
-                        runInference(taskInstance.id, ...args);
+                        runInference(taskInstance.id, model, jobID === null ? body : { ...body, job: jobID });
                     }}
                 />
             ) : <CVATLoadingSpinner /> }

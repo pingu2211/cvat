@@ -9,13 +9,14 @@ import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
 import {
-    Job, JobStage, JobState, JobType, User,
+    Job, JobStage, JobState, JobType, RQStatus, User,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
+import { modelsActions } from 'actions/models-actions';
 import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { selectionActions } from 'actions/selection-actions';
@@ -45,10 +46,12 @@ function JobActionsComponent(
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const {
+        activeInference,
         mergingConsensus,
         selectedIds,
         allJobs,
     } = useSelector((state: CombinedState) => ({
+        activeInference: state.models.inferences[jobInstance.taskId],
         mergingConsensus: state.consensus.actions.merging,
         selectedIds: state.jobs.selected,
         allJobs: state.jobs.current,
@@ -82,6 +85,10 @@ function JobActionsComponent(
     const onExportAnnotations = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(jobInstance));
     }, [jobInstance]);
+
+    const onRunAutoAnnotation = useCallback(() => {
+        dispatch(modelsActions.showRunModelDialog({ id: jobInstance.taskId }, jobInstance.id));
+    }, [jobInstance.taskId, jobInstance.id]);
 
     const onMergeConsensusJob = useCallback(() => {
         if (jobInstance.replicasCount > 0) {
@@ -221,9 +228,14 @@ function JobActionsComponent(
             projectId: jobInstance.projectId,
             pluginActions,
             isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
+            isAutomaticAnnotationEnabled: (
+                !!activeInference &&
+                ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
+            ),
             onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
             onImportAnnotations,
             onExportAnnotations,
+            onRunAutoAnnotation,
             onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
             onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
             onGoToParent: jobInstance.parentJobId ? onGoToParent : null,

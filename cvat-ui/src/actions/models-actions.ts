@@ -82,9 +82,10 @@ export const modelsActions = {
         })
     ),
     closeRunModelDialog: () => createAction(ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG),
-    showRunModelDialog: (taskInstance: any) => (
+    showRunModelDialog: (taskInstance: any, jobID: number | null = null) => (
         createAction(ModelsActionTypes.SHOW_RUN_MODEL_DIALOG, {
             taskInstance,
+            jobID,
         })
     ),
     getModelPreview: (modelID: string | number) => (

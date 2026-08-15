@@ -21,6 +21,7 @@ const defaultState: ModelsState = {
     reid: [],
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
+    modelRunnerJobID: null,
     requestedInferenceIDs: {},
     inferences: {},
     totalCount: 0,
@@ -83,6 +84,7 @@ export default function (
                 ...state,
                 modelRunnerIsVisible: true,
                 modelRunnerTask: action.payload.taskInstance,
+                modelRunnerJobID: action.payload.jobID,
             };
         }
         case ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG: {
@@ -90,6 +92,7 @@ export default function (
                 ...state,
                 modelRunnerIsVisible: false,
                 modelRunnerTask: null,
+                modelRunnerJobID: null,
             };
         }
         case ModelsActionTypes.GET_INFERENCES_SUCCESS: {

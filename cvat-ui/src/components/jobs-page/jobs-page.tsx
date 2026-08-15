@@ -15,6 +15,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
+import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import { CombinedState, JobsQuery, SelectedResourceType } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
 import { anySearch } from 'utils/any-search';
@@ -144,6 +145,7 @@ function JobsPageComponent(): JSX.Element {
                 }}
             />
             {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
+            <ModelRunnerModal />
         </div>
     );
 }

@@ -563,6 +563,7 @@ export interface ModelsState {
     };
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;
+    modelRunnerJobID: number | null;
     query: ModelsQuery;
     previews: {
         [index: string]: Preview;
