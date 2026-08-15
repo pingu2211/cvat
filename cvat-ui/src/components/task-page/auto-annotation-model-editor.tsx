@@ -111,7 +111,7 @@ export default function AutoAnnotationModelEditor(props: Props): JSX.Element {
                     </Text>
                 </CVATTooltip>
             </Col>
-            <Col span={16}>
+            <Col span={15}>
                 <Select
                     className='cvat-auto-annotation-model-selector'
                     value={functionID}
@@ -124,7 +124,7 @@ export default function AutoAnnotationModelEditor(props: Props): JSX.Element {
                     }}
                 />
             </Col>
-            <Col span={8}>
+            <Col span={9}>
                 <CVATTooltip title='Detection confidence threshold'>
                     <InputNumber
                         className='cvat-auto-annotation-model-threshold'

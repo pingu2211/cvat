@@ -245,6 +245,18 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                     previewClassName='cvat-task-item-preview'
                                 />
                             </Col>
+                            <Col span={24}>
+                                <AutoAnnotationModelEditor
+                                    functionID={taskInstance.autoAnnotationFunction}
+                                    threshold={taskInstance.autoAnnotationThreshold}
+                                    projectID={taskInstance.projectId}
+                                    onChange={(functionID, threshold) => {
+                                        taskInstance.autoAnnotationFunction = functionID;
+                                        taskInstance.autoAnnotationThreshold = threshold;
+                                        onUpdateTask(taskInstance);
+                                    }}
+                                />
+                            </Col>
                         </Row>
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
@@ -264,20 +276,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 <AutomaticAnnotationProgress
                                     activeInference={activeInference}
                                     cancelAutoAnnotation={cancelAutoAnnotation}
-                                />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={24}>
-                                <AutoAnnotationModelEditor
-                                    functionID={taskInstance.autoAnnotationFunction}
-                                    threshold={taskInstance.autoAnnotationThreshold}
-                                    projectID={taskInstance.projectId}
-                                    onChange={(functionID, threshold) => {
-                                        taskInstance.autoAnnotationFunction = functionID;
-                                        taskInstance.autoAnnotationThreshold = threshold;
-                                        onUpdateTask(taskInstance);
-                                    }}
                                 />
                             </Col>
                         </Row>

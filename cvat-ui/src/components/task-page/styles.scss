@@ -172,8 +172,7 @@
 }
 
 .cvat-auto-annotation-model {
-    margin-top: $grid-unit-size * 2;
-    margin-bottom: $grid-unit-size * 2;
+    margin-bottom: $grid-unit-size;
     max-width: $grid-unit-size * 60;
 
     .cvat-auto-annotation-model-selector,
