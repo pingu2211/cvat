@@ -19,7 +19,7 @@ import {
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiToken, APIApiTokensFilter,
+    SerializedApiToken, APIApiTokensFilter, SerializedLabelTemplate,
 } from './server-response-types';
 import { APIApiTokenModifiableFields } from './server-request-types';
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
@@ -2378,6 +2378,88 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<WebhookEve
     }
 }
 
+async function getLabelTemplates(filter: object): Promise<PaginatedResource<SerializedLabelTemplate>> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/label-templates`, {
+            params: {
+                ...params,
+                ...filter,
+            },
+        });
+
+        response.data.results.count = response.data.count;
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createLabelTemplate(
+    templateData: SerializedLabelTemplate,
+): Promise<SerializedLabelTemplate> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/label-templates`, templateData, {
+            params,
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateLabelTemplate(
+    id: number,
+    templateData: SerializedLabelTemplate,
+): Promise<SerializedLabelTemplate> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/label-templates/${id}`, templateData, {
+            params,
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function deleteLabelTemplate(id: number): Promise<void> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/label-templates/${id}`, {
+            params,
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function extractLabelTemplateLabels(file: File): Promise<SerializedLabel[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await Axios.post(`${backendAPI}/label-templates/extract-labels`, formData, {
+            params,
+        });
+        return response.data.labels;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getGuide(id: number): Promise<SerializedGuide> {
     const { backendAPI } = config;
 
@@ -2714,6 +2796,14 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
+    }),
+
+    labelTemplates: Object.freeze({
+        get: getLabelTemplates,
+        create: createLabelTemplate,
+        update: updateLabelTemplate,
+        delete: deleteLabelTemplate,
+        extractLabels: extractLabelTemplateLabels,
     }),
 
     guides: Object.freeze({

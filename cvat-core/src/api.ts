@@ -20,6 +20,7 @@ import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import LabelTemplate from './label-template';
 import AnnotationGuide from './guide';
 import { BaseAction } from './annotations-actions/base-action';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
@@ -398,6 +399,16 @@ function build(): CVATCore {
                 return result;
             },
         },
+        labelTemplates: {
+            async get(filter: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.labelTemplates.get, filter);
+                return result;
+            },
+            async extractLabels(file: File) {
+                const result = await PluginRegistry.apiWrapper(cvat.labelTemplates.extractLabels, file);
+                return result;
+            },
+        },
         consensus: {
             settings: {
                 async get(filter = {}) {
@@ -471,6 +482,7 @@ function build(): CVATCore {
             CloudStorage,
             Organization,
             Webhook,
+            LabelTemplate,
             AnnotationGuide,
             BaseShapesAction,
             BaseCollectionAction,
@@ -511,6 +523,7 @@ function build(): CVATCore {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.webhooks = Object.freeze(cvat.webhooks);
+    cvat.labelTemplates = Object.freeze(cvat.labelTemplates);
     cvat.consensus = Object.freeze(cvat.consensus);
     cvat.analytics = Object.freeze(cvat.analytics);
     cvat.classes = Object.freeze(cvat.classes);

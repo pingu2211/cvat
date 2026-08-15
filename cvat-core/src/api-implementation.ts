@@ -30,6 +30,7 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
+import LabelTemplate from './label-template';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsEventsFilter, QualityConflictsFilter,
@@ -419,6 +420,36 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         Object.assign(webhooks, { count: webhooksData.count });
         return webhooks;
+    });
+
+    implementationMixin(cvat.labelTemplates.get, async (filter) => {
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            id: isInteger,
+            name: isString,
+            owner: isString,
+            filter: isString,
+            search: isString,
+            sort: isString,
+        });
+
+        checkExclusiveFields(filter, ['id'], ['page', 'pageSize']);
+
+        const searchParams = filterFieldsToSnakeCase(filter, []);
+
+        const templatesData = await serverProxy.labelTemplates.get(searchParams);
+        const templates = templatesData.map((templateData) => new LabelTemplate(templateData));
+        Object.assign(templates, { count: templatesData.count });
+        return templates as PaginatedResource<LabelTemplate>;
+    });
+
+    implementationMixin(cvat.labelTemplates.extractLabels, async (file: File) => {
+        if (!(file instanceof File)) {
+            throw new ArgumentError('A file must be provided to read labels from');
+        }
+
+        return serverProxy.labelTemplates.extractLabels(file);
     });
 
     implementationMixin(cvat.consensus.settings.get, async (filter: ConsensusSettingsFilter) => {

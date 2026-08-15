@@ -4,7 +4,8 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter, SerializedLabel,
+    LabelTemplatesFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -30,6 +31,7 @@ import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
+import LabelTemplate from './label-template';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
@@ -155,6 +157,10 @@ export default interface CVATCore {
     webhooks: {
         get: any;
     };
+    labelTemplates: {
+        get: (filter: LabelTemplatesFilter) => Promise<PaginatedResource<LabelTemplate>>;
+        extractLabels: (file: File) => Promise<SerializedLabel[]>;
+    };
     consensus: {
         settings: {
             get: (filter: ConsensusSettingsFilter) => Promise<ConsensusSettings>;
@@ -237,6 +243,7 @@ export default interface CVATCore {
         CloudStorage: typeof CloudStorage;
         Organization: typeof Organization;
         Webhook: typeof Webhook;
+        LabelTemplate: typeof LabelTemplate;
         AnnotationGuide: typeof AnnotationGuide;
         BaseShapesAction: typeof BaseShapesAction;
         BaseCollectionAction: typeof BaseCollectionAction;

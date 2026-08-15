@@ -239,6 +239,17 @@ textarea.ant-input.cvat-raw-labels-viewer {
         }
     }
 
+    &.cvat-label-constructor-pick-from-template {
+        .ant-select {
+            width: 50%;
+        }
+
+        .cvat-label-constructor-add-all-labels-button {
+            margin-top: $grid-unit-size;
+            margin-right: $grid-unit-size * 2;
+        }
+    }
+
     .cvat-label-constructor-pick-from-model-list {
         width: 100%;
         border-radius: 0 0 $border-radius-base $border-radius-base;

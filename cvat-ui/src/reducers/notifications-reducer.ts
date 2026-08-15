@@ -21,6 +21,7 @@ import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
+import { LabelTemplatesActionsTypes } from 'actions/label-templates-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
 import { RequestsActionsTypes } from 'actions/requests-actions';
@@ -193,6 +194,13 @@ const defaultState: NotificationsState = {
             creating: null,
             updating: null,
             deleting: null,
+        },
+        labelTemplates: {
+            fetching: null,
+            creating: null,
+            updating: null,
+            deleting: null,
+            extracting: null,
         },
         analytics: {
             fetching: null,
@@ -2032,6 +2040,91 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-job-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case LabelTemplatesActionsTypes.GET_LABEL_TEMPLATES_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    labelTemplates: {
+                        ...state.errors.labelTemplates,
+                        fetching: {
+                            message: 'Could not fetch a list of label templates',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-get-label-templates-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case LabelTemplatesActionsTypes.CREATE_LABEL_TEMPLATE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    labelTemplates: {
+                        ...state.errors.labelTemplates,
+                        creating: {
+                            message: 'Could not create the label template',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-create-label-template-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case LabelTemplatesActionsTypes.UPDATE_LABEL_TEMPLATE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    labelTemplates: {
+                        ...state.errors.labelTemplates,
+                        updating: {
+                            message: 'Could not update the label template',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-update-label-template-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case LabelTemplatesActionsTypes.DELETE_LABEL_TEMPLATE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    labelTemplates: {
+                        ...state.errors.labelTemplates,
+                        deleting: {
+                            message: 'Could not delete the label template',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-delete-label-template-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case LabelTemplatesActionsTypes.EXTRACT_LABELS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    labelTemplates: {
+                        ...state.errors.labelTemplates,
+                        extracting: {
+                            message: 'Could not read labels from the file',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-extract-labels-failed',
                         },
                     },
                 },

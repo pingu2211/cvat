@@ -25,6 +25,7 @@ import consensusReducer from './consensus-reducer';
 import cloudStoragesReducer from './cloud-storages-reducer';
 import organizationsReducer from './organizations-reducer';
 import webhooksReducer from './webhooks-reducer';
+import labelTemplatesReducer from './label-templates-reducer';
 import invitationsReducer from './invitations-reducer';
 import requestsReducer from './requests-reducer';
 import serverAPIReducer from './server-api-reducer';
@@ -54,6 +55,7 @@ export default function createRootReducer(): Reducer {
         cloudStorages: cloudStoragesReducer,
         organizations: organizationsReducer,
         webhooks: webhooksReducer,
+        labelTemplates: labelTemplatesReducer,
         invitations: invitationsReducer,
         requests: requestsReducer,
         serverAPI: serverAPIReducer,

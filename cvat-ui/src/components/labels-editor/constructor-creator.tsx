@@ -16,6 +16,7 @@ interface Props {
     labelNames: string[];
     creatorType: CreatorType;
     onCreate: (label: LabelOptColor) => void;
+    onCreateMany: (labels: LabelOptColor[]) => void;
     onCancel: () => void;
     showLabelType?: boolean;
 }
@@ -23,6 +24,7 @@ interface Props {
 function compareProps(prevProps: Props, nextProps: Props): boolean {
     return (
         prevProps.onCreate === nextProps.onCreate &&
+        prevProps.onCreateMany === nextProps.onCreateMany &&
         prevProps.onCancel === nextProps.onCancel &&
         prevProps.creatorType === nextProps.creatorType &&
         prevProps.showLabelType === nextProps.showLabelType &&
@@ -33,7 +35,7 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
 
 function ConstructorCreator(props: Props): JSX.Element {
     const {
-        onCreate, onCancel, labelNames, creatorType, showLabelType,
+        onCreate, onCreateMany, onCancel, labelNames, creatorType, showLabelType,
     } = props;
     const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
 
@@ -66,6 +68,7 @@ function ConstructorCreator(props: Props): JSX.Element {
                 labelNames={labelNames}
                 onCancel={onCancel}
                 onCreate={onCreate}
+                onCreateMany={onCreateMany}
             />
         );
     } else {

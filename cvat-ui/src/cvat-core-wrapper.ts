@@ -10,6 +10,7 @@ import config from 'config';
 import ObjectState from 'cvat-core/src/object-state';
 import { AudioIntervalState } from 'cvat-core/src/annotations-objects/audio-interval-state';
 import Webhook, { type WebhookEvent } from 'cvat-core/src/webhook';
+import LabelTemplate from 'cvat-core/src/label-template';
 import MLModel from 'cvat-core/src/ml-model';
 import CloudStorage from 'cvat-core/src/cloud-storage';
 import {
@@ -91,6 +92,7 @@ export {
     LabelType,
     Storage,
     Webhook,
+    LabelTemplate,
     Issue,
     User,
     CloudStorage,

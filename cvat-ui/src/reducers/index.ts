@@ -13,7 +13,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage,
+    Membership, AnnotationFormats, CloudStorage, LabelTemplate,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -734,6 +734,13 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
         };
+        labelTemplates: {
+            fetching: null | ErrorState;
+            creating: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
+            extracting: null | ErrorState;
+        };
         analytics: {
             fetching: null | ErrorState;
             fetchingSettings: null | ErrorState;
@@ -1169,6 +1176,26 @@ export interface WebhooksState {
     }
 }
 
+export interface LabelTemplatesQuery {
+    page: number;
+    pageSize: number;
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+}
+
+export interface LabelTemplatesState {
+    current: LabelTemplate[];
+    totalCount: number;
+    fetching: boolean;
+    query: LabelTemplatesQuery;
+    activities: {
+        deletes: {
+            [templateId: number]: boolean; // deleted (deleting if in dictionary)
+        };
+    };
+}
+
 export interface InvitationsQuery {
     page: number;
     pageSize: number;
@@ -1223,6 +1250,7 @@ export interface CombinedState {
     organizations: OrganizationState;
     invitations: InvitationsState;
     webhooks: WebhooksState;
+    labelTemplates: LabelTemplatesState;
     requests: RequestsState;
     bulkActions: BulkActionsState;
     serverAPI: ServerAPIState;
