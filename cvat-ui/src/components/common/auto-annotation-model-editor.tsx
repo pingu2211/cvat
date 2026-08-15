@@ -13,6 +13,8 @@ import { getCore, Project } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 
+import './styles.scss';
+
 const core = getCore();
 
 const NO_MODEL = '';

@@ -92,6 +92,14 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                 projectSpec.source_storage = this.sourceStorage.toJSON();
             }
 
+            if (this.autoAnnotationFunction) {
+                projectSpec.auto_annotation_function = this.autoAnnotationFunction;
+
+                if (typeof this.autoAnnotationThreshold === 'number') {
+                    projectSpec.auto_annotation_threshold = this.autoAnnotationThreshold;
+                }
+            }
+
             const project = await serverProxy.projects.create(projectSpec);
             const labels = await serverProxy.labels.get({ project_id: project.id });
             return new Project({ ...project, labels: labels.results });

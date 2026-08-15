@@ -12,7 +12,7 @@ import Text from 'antd/lib/typography/Text';
 import { getCore, Project } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
-import AutoAnnotationModelEditor from 'components/task-page/auto-annotation-model-editor';
+import AutoAnnotationModelEditor from 'components/common/auto-annotation-model-editor';
 import UserSelector from 'components/task-page/user-selector';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 
