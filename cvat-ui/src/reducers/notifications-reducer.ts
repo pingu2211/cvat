@@ -985,7 +985,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             if (action.payload.activeInference.status === 'finished') {
-                const { taskID } = action.payload;
+                const { taskID, activeInference: { jobID } } = action.payload;
+                const target = jobID === null ?
+                    `[task #${taskID}](/tasks/${taskID})` :
+                    `[job #${jobID}](/tasks/${taskID}/jobs/${jobID})`;
+
                 return {
                     ...state,
                     messages: {
@@ -993,8 +997,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         models: {
                             ...state.messages.models,
                             inferenceDone: {
-                                message: 'Automatic annotation accomplished for the ' +
-                                `[task #${taskID}](/tasks/${taskID})`,
+                                message: `Automatic annotation accomplished for the ${target}`,
                             },
                         },
                     },

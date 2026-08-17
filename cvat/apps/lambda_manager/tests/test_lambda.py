@@ -11,7 +11,9 @@ from collections import Counter
 from itertools import groupby
 from unittest import mock, skip
 
+import django_rq
 import requests
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.signing import TimestampSigner
 from django.http import HttpResponseNotFound, HttpResponseServerError
@@ -2217,3 +2219,85 @@ class Issue4996_Cases(_LambdaTestCaseBase):
                 self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class RequestConflictTestCases(_LambdaTestCaseBase):
+    def setUp(self):
+        super().setUp()
+
+        # RQ jobs are executed synchronously in tests, so every request would be finished
+        # by the time the next one is submitted. An asynchronous queue keeps them pending,
+        # which is what the conflict checks are about.
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value, is_async=True)
+        queue_patcher = mock.patch(
+            "cvat.apps.lambda_manager.views.LambdaQueue._get_queue", return_value=queue
+        )
+        self.addCleanup(queue_patcher.stop)
+        queue_patcher.start()
+
+        self.task = self._create_task(
+            {**tasks["main"], "segment_size": 1}, self._generate_task_images(2), owner=self.admin
+        )
+        response = self._get_request(
+            "/api/jobs", self.admin, query_params={"task_id": self.task["id"]}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.job_ids = sorted(job["id"] for job in response.data["results"])
+        self.assertEqual(len(self.job_ids), 2)
+
+    def _request_annotation(self, *, job: int | None = None):
+        data = {
+            "function": id_function_detector,
+            "task": self.task["id"],
+            "cleanup": True,
+            "mapping": {
+                "car": {"name": "car"},
+            },
+        }
+        if job is not None:
+            data["job"] = job
+
+        return self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
+
+    def test_api_v2_lambda_requests_create_for_several_jobs_of_one_task(self):
+        first = self._request_annotation(job=self.job_ids[0])
+        self.assertEqual(first.status_code, status.HTTP_200_OK)
+
+        second = self._request_annotation(job=self.job_ids[1])
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+
+        self.assertNotEqual(first.data["id"], second.data["id"])
+        self.assertEqual(first.data["function"]["job"], self.job_ids[0])
+        self.assertEqual(second.data["function"]["job"], self.job_ids[1])
+
+    def test_api_v2_lambda_requests_create_two_requests_for_one_job(self):
+        self.assertEqual(
+            self._request_annotation(job=self.job_ids[0]).status_code, status.HTTP_200_OK
+        )
+
+        response = self._request_annotation(job=self.job_ids[0])
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("job #{}".format(self.job_ids[0]), response.data)
+
+    def test_api_v2_lambda_requests_create_for_task_while_job_is_annotated(self):
+        self.assertEqual(
+            self._request_annotation(job=self.job_ids[0]).status_code, status.HTTP_200_OK
+        )
+
+        response = self._request_annotation()
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("job #{}".format(self.job_ids[0]), response.data)
+
+    def test_api_v2_lambda_requests_create_for_job_while_task_is_annotated(self):
+        self.assertEqual(self._request_annotation().status_code, status.HTTP_200_OK)
+
+        response = self._request_annotation(job=self.job_ids[0])
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("task #{}".format(self.task["id"]), response.data)
+
+    def test_api_v2_lambda_requests_create_two_requests_for_one_task(self):
+        self.assertEqual(self._request_annotation().status_code, status.HTTP_200_OK)
+
+        response = self._request_annotation()
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("task #{}".format(self.task["id"]), response.data)

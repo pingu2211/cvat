@@ -23,7 +23,7 @@ import TaskActionsComponent from './actions-menu';
 export interface TaskItemProps {
     taskInstance: any;
     deleted: boolean;
-    activeInference: ActiveInference | null;
+    activeInferences: ActiveInference[];
     activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
@@ -43,7 +43,7 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
     const {
         taskInstance,
         deleted,
-        activeInference,
+        activeInferences,
         activeRequest,
         ribbonPlugins,
         cancelAutoAnnotation,
@@ -179,7 +179,7 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
                     </Col>
                 </Row>
                 <AutomaticAnnotationProgress
-                    activeInference={activeInference}
+                    activeInferences={activeInferences}
                     cancelAutoAnnotation={cancelAutoAnnotation}
                     resumeAutoAnnotation={resumeAutoAnnotation}
                 />

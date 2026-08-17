@@ -47,14 +47,14 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     const dispatch = useDispatch();
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
     const {
-        activeInference,
+        activeInferences,
         mergingConsensus,
         currentOrganization,
         selectedIds,
         currentTasks,
         tasksQuery,
     } = useSelector((state: CombinedState) => ({
-        activeInference: state.models.inferences[taskInstance.id],
+        activeInferences: state.models.inferences[taskInstance.id],
         mergingConsensus: state.consensus.actions.merging,
         currentOrganization: state.organizations.current as Organization | null,
         selectedIds: state.tasks.selected,
@@ -252,10 +252,10 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             startEditField,
             taskId: taskInstance.id,
             projectId: taskInstance.projectId,
-            isAutomaticAnnotationEnabled: (
-                activeInference &&
-                ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
-            ),
+            // the whole task cannot be annotated while any of its jobs is being annotated
+            isAutomaticAnnotationEnabled: (activeInferences ?? []).some((inference) => (
+                ![RQStatus.FAILED, RQStatus.FINISHED].includes(inference.status)
+            )),
             isConsensusEnabled: taskInstance.consensusEnabled,
             isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
             pluginActions,

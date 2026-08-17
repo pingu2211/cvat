@@ -37,7 +37,7 @@ interface OwnProps {
 }
 
 interface StateToProps {
-    activeInference: ActiveInference | null;
+    activeInferences: ActiveInference[];
     project?: Project;
 }
 
@@ -49,7 +49,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
     return {
         ...own,
-        activeInference: state.models.inferences[own.task.id] ?? null,
+        activeInferences: state.models.inferences[own.task.id] ?? [],
         project: state.projects.current.find((project) => project.id === own.task.projectId),
     };
 }
@@ -227,7 +227,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            activeInference,
+            activeInferences,
             task: taskInstance,
             cancelAutoAnnotation,
             resumeAutoAnnotation,
@@ -279,7 +279,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                             </Col>
                             <Col span={10}>
                                 <AutomaticAnnotationProgress
-                                    activeInference={activeInference}
+                                    activeInferences={activeInferences}
                                     cancelAutoAnnotation={cancelAutoAnnotation}
                                     resumeAutoAnnotation={resumeAutoAnnotation}
                                 />

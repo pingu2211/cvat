@@ -14,7 +14,7 @@ import { cancelInferenceAsync, resumeInferenceAsync } from 'actions/models-actio
 interface StateToProps {
     deleted: boolean;
     taskInstance: any;
-    activeInference: ActiveInference | null;
+    activeInferences: ActiveInference[];
     activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
 }
@@ -43,7 +43,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         deleted: id in deletes ? deletes[id] === true : false,
         taskInstance: task,
-        activeInference: state.models.inferences[id] || null,
+        activeInferences: state.models.inferences[id] ?? [],
         ribbonPlugins: state.plugins.components.taskItem.ribbon,
         activeRequest: activeRequest || null,
     };
