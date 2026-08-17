@@ -32,9 +32,17 @@ export interface TrackerResults {
     shapes: MinimalShape[];
 }
 
+export interface FunctionRequestUpdate {
+    status: RQStatus;
+    progress: number;
+    message?: string;
+    // whether the request can be continued from the point it stopped at
+    resumable: boolean;
+}
+
 class LambdaManager {
     private listening: Record<number, {
-        onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
+        onUpdate: ((update: FunctionRequestUpdate) => void)[];
         timeout: number | null;
     }>;
 
@@ -123,8 +131,10 @@ class LambdaManager {
 
     async requests(): Promise<SerializedFunctionRequest[]> {
         const lambdaRequests = await serverProxy.lambda.requests();
+        // failed requests are kept as well, so that a run that died part way
+        // stays visible and can be resumed from where it stopped
         return lambdaRequests
-            .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
+            .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED, RQStatus.FAILED].includes(request.status));
     }
 
     async cancel(requestID): Promise<void> {
@@ -139,9 +149,17 @@ class LambdaManager {
         }
     }
 
+    async resume(requestID: string): Promise<SerializedFunctionRequest> {
+        if (typeof requestID !== 'string') {
+            throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
+        }
+
+        return serverProxy.lambda.resume(requestID);
+    }
+
     async listen(
         requestID: string,
-        callback: (status: RQStatus, progress: number, message?: string) => void,
+        callback: (update: FunctionRequestUpdate) => void,
     ): Promise<void> {
         if (requestID in this.listening) {
             this.listening[requestID].onUpdate.push(callback);
@@ -151,22 +169,29 @@ class LambdaManager {
 
         const timeoutCallback = (): void => {
             serverProxy.lambda.status(requestID).then((response) => {
-                const { status } = response;
+                const { status, resumable } = response;
                 if (requestID in this.listening) {
                     // check it was not cancelled
                     const { onUpdate } = this.listening[requestID];
                     if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                        onUpdate.forEach((update) => update(status, response.progress || 0));
+                        onUpdate.forEach((update) => update({
+                            status, progress: response.progress || 0, resumable,
+                        }));
                         this.listening[requestID].timeout = window
                             .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 30000 : 10000);
                     } else {
                         delete this.listening[requestID];
                         if (status === RQStatus.FINISHED) {
-                            onUpdate
-                                .forEach((update) => update(status, response.progress ?? 100));
+                            onUpdate.forEach((update) => update({
+                                status, progress: response.progress ?? 100, resumable,
+                            }));
                         } else {
-                            onUpdate
-                                .forEach((update) => update(status, response.progress ?? 0, response.exc_info ?? ''));
+                            onUpdate.forEach((update) => update({
+                                status,
+                                progress: response.progress ?? 0,
+                                message: response.exc_info ?? '',
+                                resumable,
+                            }));
                         }
                     }
                 }
@@ -174,12 +199,12 @@ class LambdaManager {
                 if (requestID in this.listening) {
                     // check it was not cancelled
                     const { onUpdate } = this.listening[requestID];
-                    onUpdate
-                        .forEach((update) => update(
-                            RQStatus.UNKNOWN,
-                            0,
-                            `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                        ));
+                    onUpdate.forEach((update) => update({
+                        status: RQStatus.UNKNOWN,
+                        progress: 0,
+                        message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                        resumable: false,
+                    }));
                 }
             }).finally(() => {
                 if (requestID in this.listening) {

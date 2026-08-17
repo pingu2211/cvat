@@ -23,5 +23,6 @@ router.register("requests", views.RequestViewSet, basename="lambda_request")
 #   "points": [...], }
 # GET  /api/lambda/requests - get list of requests
 # GET  /api/lambda/requests/<int:rid> - get status of the request
+# POST /api/lambda/requests/<int:rid>/resume - continue a failed request
 # DEL  /api/lambda/requests/<int:rid> - cancel a request (don't delete)
 urlpatterns = [path("api/lambda/", include(router.urls))]

@@ -29,6 +29,12 @@ class LambdaRQMeta(BaseRQMeta):
     progress: int | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, int), optional=True
     )
+    # The frame the results of the run have been saved up to. Unlike the progress,
+    # which is updated on every frame, this only moves when the collected results
+    # are actually written, so it is the point a resumed run may continue from.
+    last_submitted_frame: int | None = MutableRQMetaAttribute(
+        RQJobMetaField.LAST_SUBMITTED_FRAME, validator=lambda x: isinstance(x, int), optional=True
+    )
 
     @classmethod
     def build_for(

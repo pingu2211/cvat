@@ -2001,6 +2001,18 @@ async function cancelLambdaRequest(requestId) {
     }
 }
 
+async function resumeLambdaRequest(requestId: string): Promise<SerializedFunctionRequest> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/lambda/requests/${requestId}/resume`);
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function installedApps() {
     const { backendAPI } = config;
     try {
@@ -2751,6 +2763,7 @@ export default Object.freeze({
         run: runLambdaRequest,
         call: callLambdaFunction,
         cancel: cancelLambdaRequest,
+        resume: resumeLambdaRequest,
     }),
 
     issues: Object.freeze({

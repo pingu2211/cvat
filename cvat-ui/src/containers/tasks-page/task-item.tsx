@@ -9,7 +9,7 @@ import { Task, Request } from 'cvat-core-wrapper';
 import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
 import TaskItemComponent from 'components/tasks-page/task-item';
 import { updateTaskInState as updateTaskInStateAction, getTaskPreviewAsync } from 'actions/tasks-actions';
-import { cancelInferenceAsync } from 'actions/models-actions';
+import { cancelInferenceAsync, resumeInferenceAsync } from 'actions/models-actions';
 
 interface StateToProps {
     deleted: boolean;
@@ -22,6 +22,7 @@ interface StateToProps {
 interface DispatchToProps {
     updateTaskInState(task: Task): void;
     cancelAutoAnnotation(): void;
+    resumeAutoAnnotation(): void;
 }
 
 interface OwnProps {
@@ -52,6 +53,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
         cancelAutoAnnotation(): void {
             dispatch(cancelInferenceAsync(own.taskID));
+        },
+        resumeAutoAnnotation(): void {
+            dispatch(resumeInferenceAsync(own.taskID));
         },
         updateTaskInState(task: Task): void {
             dispatch(updateTaskInStateAction(task));

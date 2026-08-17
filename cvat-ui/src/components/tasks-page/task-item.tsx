@@ -27,6 +27,7 @@ export interface TaskItemProps {
     activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
+    resumeAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
     selected: boolean;
     onClick: () => void;
@@ -46,6 +47,7 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
         activeRequest,
         ribbonPlugins,
         cancelAutoAnnotation,
+        resumeAutoAnnotation,
         updateTaskInState,
         selected,
         onClick,
@@ -179,6 +181,7 @@ function TaskItemComponent(props: TaskItemProps): JSX.Element {
                 <AutomaticAnnotationProgress
                     activeInference={activeInference}
                     cancelAutoAnnotation={cancelAutoAnnotation}
+                    resumeAutoAnnotation={resumeAutoAnnotation}
                 />
             </Col>
         );

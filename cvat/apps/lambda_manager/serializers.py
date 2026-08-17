@@ -78,6 +78,9 @@ class FunctionCallSerializer(serializers.Serializer):
     function = FunctionCallParamsSerializer()
     status = serializers.CharField(allow_null=True)
     progress = serializers.IntegerField(default=0, allow_null=True)
+    resumable = serializers.BooleanField(
+        default=False, help_text="Whether the request can be continued from where it stopped"
+    )
     enqueued = serializers.DateTimeField(allow_null=True)
     started = serializers.DateTimeField(allow_null=True)
     ended = serializers.DateTimeField(allow_null=True)

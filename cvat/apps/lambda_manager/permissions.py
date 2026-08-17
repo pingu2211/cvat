@@ -72,7 +72,14 @@ class LambdaRequestPermission(OpenPolicyAgentPermission):
                     ("job", JobPermission),
                     ("task", TaskPermission),
                 ):
-                    if (target_id := request.data.get(field)) is not None:
+                    # Resuming addresses an existing request, so its target comes from
+                    # the queued job rather than from the request body
+                    if obj is not None:
+                        target_id = obj.get_job() if field == "job" else obj.get_task()
+                    else:
+                        target_id = request.data.get(field)
+
+                    if target_id is not None:
                         target_view_data_perm = target_permission_class.create_scope_view_data(
                             iam_context, target_id
                         )
@@ -107,6 +114,8 @@ class LambdaRequestPermission(OpenPolicyAgentPermission):
             {
                 "list": Scopes.LIST,
                 "create": Scopes.CREATE,
+                # resuming a request starts a new run of the same function
+                "resume": Scopes.CREATE,
                 "retrieve": Scopes.VIEW,
                 "destroy": Scopes.DELETE,
             }[view.action]

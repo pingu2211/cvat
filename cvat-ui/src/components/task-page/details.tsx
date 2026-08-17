@@ -17,7 +17,7 @@ import {
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
-import { cancelInferenceAsync } from 'actions/models-actions';
+import { cancelInferenceAsync, resumeInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
 import AutoAnnotationModelEditor from 'components/common/auto-annotation-model-editor';
@@ -43,6 +43,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     cancelAutoAnnotation(): void;
+    resumeAutoAnnotation(): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
@@ -57,6 +58,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     return {
         cancelAutoAnnotation(): void {
             dispatch(cancelInferenceAsync(own.task.id));
+        },
+        resumeAutoAnnotation(): void {
+            dispatch(resumeInferenceAsync(own.task.id));
         },
     };
 }
@@ -226,6 +230,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             activeInference,
             task: taskInstance,
             cancelAutoAnnotation,
+            resumeAutoAnnotation,
             onUpdateTask,
         } = this.props;
 
@@ -276,6 +281,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 <AutomaticAnnotationProgress
                                     activeInference={activeInference}
                                     cancelAutoAnnotation={cancelAutoAnnotation}
+                                    resumeAutoAnnotation={resumeAutoAnnotation}
                                 />
                             </Col>
                         </Row>

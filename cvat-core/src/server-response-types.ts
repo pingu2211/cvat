@@ -630,9 +630,11 @@ export interface SerializedFunctionRequest {
     ended: string | null;
     exc_info: string;
     progress: number | null;
+    resumable: boolean;
     function: {
         id: number | string;
         task: number;
+        job?: number;
     };
 }
 
