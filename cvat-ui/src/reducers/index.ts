@@ -546,6 +546,7 @@ export interface ActiveInference {
     functionID: string | number;
     // whether the run can be continued from the point it stopped at
     resumable: boolean;
+    jobID: number | null;
 }
 
 export interface ModelsState {
@@ -560,8 +561,9 @@ export interface ModelsState {
     requestedInferenceIDs: {
         [index: string]: boolean;
     };
+    // a task may have several requests in flight at once: one per job of the task
     inferences: {
-        [index: number]: ActiveInference;
+        [index: number]: ActiveInference[];
     };
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;

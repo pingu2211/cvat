@@ -11,10 +11,13 @@ import TaskItemComponent from 'components/tasks-page/task-item';
 import { updateTaskInState as updateTaskInStateAction, getTaskPreviewAsync } from 'actions/tasks-actions';
 import { cancelInferenceAsync, resumeInferenceAsync } from 'actions/models-actions';
 
+// a shared constant, so that a task without requests keeps the same props
+const NO_INFERENCES: ActiveInference[] = [];
+
 interface StateToProps {
     deleted: boolean;
     taskInstance: any;
-    activeInference: ActiveInference | null;
+    activeInferences: ActiveInference[];
     activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
 }
@@ -43,7 +46,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         deleted: id in deletes ? deletes[id] === true : false,
         taskInstance: task,
-        activeInference: state.models.inferences[id] || null,
+        activeInferences: state.models.inferences[id] ?? NO_INFERENCES,
         ribbonPlugins: state.plugins.components.taskItem.ribbon,
         activeRequest: activeRequest || null,
     };

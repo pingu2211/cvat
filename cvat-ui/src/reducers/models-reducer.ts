@@ -9,7 +9,29 @@ import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { SelectionActionsTypes, SelectionActions } from 'actions/selection-actions';
 import { MLModel, ModelKind } from 'cvat-core-wrapper';
-import { ModelsState, SelectedResourceType } from '.';
+import { ActiveInference, ModelsState, SelectedResourceType } from '.';
+
+type Inferences = ModelsState['inferences'];
+
+// requests of a task are stored together, because a task may be annotated
+// by one task-scoped request or by a request per job
+function updateInference(inferences: Inferences, taskID: number, inference: ActiveInference): Inferences {
+    const taskInferences = inferences[taskID] ?? [];
+    const updated = taskInferences.some((existing) => existing.id === inference.id) ?
+        taskInferences.map((existing) => (existing.id === inference.id ? inference : existing)) :
+        [...taskInferences, inference];
+
+    return { ...inferences, [taskID]: updated };
+}
+
+function removeInference(inferences: Inferences, taskID: number, inferenceID: string): Inferences {
+    const taskInferences = (inferences[taskID] ?? []).filter((existing) => existing.id !== inferenceID);
+    if (!taskInferences.length) {
+        return omit(inferences, taskID);
+    }
+
+    return { ...inferences, [taskID]: taskInferences };
+}
 
 const defaultState: ModelsState = {
     initialized: false,
@@ -108,49 +130,38 @@ export default function (
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             const { inferences, requestedInferenceIDs } = state;
+            const { taskID, activeInference } = action.payload;
 
-            if (action.payload.activeInference.status === 'finished') {
-                const { taskID, activeInference } = action.payload;
-                const { id: inferenceID } = activeInference;
-
+            if (activeInference.status === 'finished') {
                 return {
                     ...state,
-                    inferences: omit(inferences, taskID),
-                    requestedInferenceIDs: omit(requestedInferenceIDs, inferenceID),
+                    inferences: removeInference(inferences, taskID, activeInference.id),
+                    requestedInferenceIDs: omit(requestedInferenceIDs, activeInference.id),
                 };
             }
 
-            const update: any = {};
-            update[action.payload.taskID] = action.payload.activeInference;
-
             return {
                 ...state,
-                inferences: {
-                    ...state.inferences,
-                    ...update,
-                },
+                inferences: updateInference(inferences, taskID, activeInference),
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {
             const { inferences } = state;
+            const { taskID, activeInference } = action.payload;
 
             return {
                 ...state,
-                inferences: {
-                    ...inferences,
-                    [action.payload.taskID]: action.payload.activeInference,
-                },
+                inferences: updateInference(inferences, taskID, activeInference),
             };
         }
         case ModelsActionTypes.CANCEL_INFERENCE_SUCCESS: {
             const { inferences, requestedInferenceIDs } = state;
             const { taskID, activeInference } = action.payload;
-            const { id: inferenceID } = activeInference;
 
             return {
                 ...state,
-                inferences: omit(inferences, taskID),
-                requestedInferenceIDs: omit(requestedInferenceIDs, inferenceID),
+                inferences: removeInference(inferences, taskID, activeInference.id),
+                requestedInferenceIDs: omit(requestedInferenceIDs, activeInference.id),
             };
         }
         case ModelsActionTypes.GET_MODEL_PREVIEW: {

@@ -797,6 +797,23 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job and LambdaRQMeta.for_job(job).lambda_]
 
+    def find_active_job_request(self, task: int) -> LambdaJob | None:
+        """
+        Finds an active job-scoped request for the task.
+
+        Such a request has an id of its own, so unlike the task-scoped one it cannot be
+        looked up directly and the whole queue has to be scanned.
+        """
+        for lambda_job in self.get_jobs():
+            if (
+                lambda_job.get_task() == task
+                and lambda_job.get_job() is not None
+                and lambda_job.is_active
+            ):
+                return lambda_job
+
+        return None
+
     def enqueue(
         self,
         lambda_func,
@@ -816,24 +833,50 @@ class LambdaQueue:
         resume_from: int | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
-        rq_id = RequestId(
+        task_rq_id = RequestId(
             action=RequestAction.AUTOANNOTATE, target=RequestTarget.TASK, target_id=task
         ).render()
+        # A job-scoped request is keyed on the job, so that several jobs of the same task
+        # can be enqueued at once and annotated one after another.
+        rq_id = (
+            task_rq_id
+            if job is None
+            else RequestId(
+                action=RequestAction.AUTOANNOTATE, target=RequestTarget.JOB, target_id=job
+            ).render()
+        )
 
         # Ensure that there is no race condition when processing parallel requests.
         # Enqueuing an RQ job with (queue, user) lock  but without (queue, rq_id) lock
         # may lead to queue jamming for a user due to self-dependencies.
-        with get_rq_lock_for_job(queue, rq_id):
+        # The lock is taken on the task id even for job-scoped requests, so that requests
+        # for different jobs of a task cannot pass the overlap check simultaneously.
+        with get_rq_lock_for_job(queue, task_rq_id):
             if rq_job := queue.fetch_job(rq_id):
-                if rq_job.get_status(refresh=False) not in {
-                    rq.job.JobStatus.FAILED,
-                    rq.job.JobStatus.FINISHED,
-                }:
+                if LambdaJob(rq_job).is_active:
                     raise ValidationError(
-                        "Only one running request is allowed for the same task #{}".format(task),
+                        "Only one running request is allowed for the same {}".format(
+                            "task #{}".format(task) if job is None else "job #{}".format(job)
+                        ),
                         code=status.HTTP_409_CONFLICT,
                     )
                 rq_job.delete()
+
+            # A task-scoped request covers every job of the task, so it must not run at the
+            # same time as a job-scoped one. Requests for two different jobs never overlap.
+            if job is None:
+                if overlapping_job := self.find_active_job_request(task):
+                    raise ValidationError(
+                        "A request for job #{} of the same task is already in progress".format(
+                            overlapping_job.get_job()
+                        ),
+                        code=status.HTTP_409_CONFLICT,
+                    )
+            elif (task_rq_job := queue.fetch_job(task_rq_id)) and LambdaJob(task_rq_job).is_active:
+                raise ValidationError(
+                    "A request for the whole task #{} is already in progress".format(task),
+                    code=status.HTTP_409_CONFLICT,
+                )
 
             # LambdaJob(None) is a workaround for python-rq. It has multiple issues
             # with invocation of non-trivial functions. For example, it cannot run
@@ -1099,6 +1142,14 @@ class LambdaJob:
 
     def get_status(self):
         return self.job.get_status()
+
+    @property
+    def is_active(self):
+        # the status is taken from the already fetched job, no extra request to Redis is made
+        return self.job.get_status(refresh=False) not in {
+            rq.job.JobStatus.FAILED,
+            rq.job.JobStatus.FINISHED,
+        }
 
     @property
     def is_finished(self):

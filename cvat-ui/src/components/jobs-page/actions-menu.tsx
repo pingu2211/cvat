@@ -46,12 +46,12 @@ function JobActionsComponent(
 
     const pluginActions = usePlugins((state: CombinedState) => state.plugins.components.jobActions.items, props);
     const {
-        activeInference,
+        activeInferences,
         mergingConsensus,
         selectedIds,
         allJobs,
     } = useSelector((state: CombinedState) => ({
-        activeInference: state.models.inferences[jobInstance.taskId],
+        activeInferences: state.models.inferences[jobInstance.taskId],
         mergingConsensus: state.consensus.actions.merging,
         selectedIds: state.jobs.selected,
         allJobs: state.jobs.current,
@@ -228,10 +228,12 @@ function JobActionsComponent(
             projectId: jobInstance.projectId,
             pluginActions,
             isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
-            isAutomaticAnnotationEnabled: (
-                !!activeInference &&
-                ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
-            ),
+            // other jobs of the task may be annotated at the same time, but a job cannot be
+            // requested twice, nor while the whole task is being annotated
+            isAutomaticAnnotationEnabled: (activeInferences ?? []).some((inference) => (
+                (inference.jobID === null || inference.jobID === jobInstance.id) &&
+                ![RQStatus.FAILED, RQStatus.FINISHED].includes(inference.status)
+            )),
             onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
             onImportAnnotations,
             onExportAnnotations,

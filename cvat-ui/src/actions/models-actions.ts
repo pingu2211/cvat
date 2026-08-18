@@ -130,7 +130,7 @@ function listen(
     const {
         id, function: func, status, progress, exc_info: error, resumable,
     } = functionRequest;
-    const { task: taskID, id: functionID } = func;
+    const { task: taskID, id: functionID, job: jobID = null } = func;
 
     dispatch(
         modelsActions.getInferenceStatusSuccess(taskID, {
@@ -140,6 +140,7 @@ function listen(
             error,
             id,
             resumable,
+            jobID,
         }),
     );
 
@@ -164,6 +165,7 @@ function listen(
                             error: message as string,
                             id,
                             resumable: _resumable,
+                            jobID,
                         },
                         new Error(`Inference status for the task ${taskID} is ${_status}. ${message}`),
                     ),
@@ -180,6 +182,7 @@ function listen(
                     error: message as string,
                     id,
                     resumable: _resumable,
+                    jobID,
                 }),
             );
         })
@@ -193,6 +196,7 @@ function listen(
                     id,
                     functionID,
                     resumable: false,
+                    jobID,
                 }, e instanceof Error ? e : new Error(msg)),
             );
         });
@@ -241,31 +245,38 @@ export function startInferenceAsync(taskId: number, model: MLModel, body: object
 
 export function cancelInferenceAsync(taskID: number): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
-        try {
-            const inference = getState().models.inferences[taskID];
-            await core.lambda.cancel(inference.id);
-            dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
-        } catch (error) {
-            dispatch(modelsActions.cancelInferenceFailed(taskID, error));
-        }
+        // all the requests of the task are cancelled, because they are reported together
+        const inferences = getState().models.inferences[taskID] ?? [];
+        await Promise.all(inferences.map(async (inference) => {
+            try {
+                await core.lambda.cancel(inference.id);
+                dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
+            } catch (error) {
+                dispatch(modelsActions.cancelInferenceFailed(taskID, error));
+            }
+        }));
     };
 }
 
 export function resumeInferenceAsync(taskID: number): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
-        try {
-            const inference = getState().models.inferences[taskID];
-            // the server knows how far the interrupted run got and what it was
-            // started with, so the new run needs no parameters of its own
-            const functionRequest = await core.lambda.resume(inference.id);
+        // every stopped request of the task is resumed, because they are reported together
+        const inferences = (getState().models.inferences[taskID] ?? [])
+            .filter((inference) => inference.resumable);
+        await Promise.all(inferences.map(async (inference) => {
+            try {
+                // the server knows how far the interrupted run got and what it was
+                // started with, so the new run needs no parameters of its own
+                const functionRequest = await core.lambda.resume(inference.id);
 
-            listen(functionRequest, (action: ModelsActions): void => {
-                dispatch(action);
-            });
-            dispatch(modelsActions.getInferencesSuccess({ [functionRequest.id]: true }));
-        } catch (error) {
-            dispatch(modelsActions.resumeInferenceFailed(taskID, error));
-        }
+                listen(functionRequest, (action: ModelsActions): void => {
+                    dispatch(action);
+                });
+                dispatch(modelsActions.getInferencesSuccess({ [functionRequest.id]: true }));
+            } catch (error) {
+                dispatch(modelsActions.resumeInferenceFailed(taskID, error));
+            }
+        }));
     };
 }
 
