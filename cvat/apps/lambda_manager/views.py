@@ -797,23 +797,19 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job and LambdaRQMeta.for_job(job).lambda_]
 
-    def find_overlapping_request(self, *, task: int, job: int | None) -> LambdaJob | None:
+    def find_active_job_request(self, task: int) -> LambdaJob | None:
         """
-        Finds an active request annotating frames that the requested one would annotate too.
+        Finds an active job-scoped request for the task.
 
-        A task-scoped request covers every job of the task, so it overlaps with any
-        job-scoped request of that task and vice versa. Requests for two different jobs
-        never overlap, and a duplicate request for the same job is detected by its id.
+        Such a request has an id of its own, so unlike the task-scoped one it cannot be
+        looked up directly and the whole queue has to be scanned.
         """
         for lambda_job in self.get_jobs():
-            if lambda_job.get_task() != task or not lambda_job.is_active:
-                continue
-
-            other_job = lambda_job.get_job()
-            if job is None and other_job is not None:
-                return lambda_job
-
-            if job is not None and other_job is None:
+            if (
+                lambda_job.get_task() == task
+                and lambda_job.get_job() is not None
+                and lambda_job.is_active
+            ):
                 return lambda_job
 
         return None
@@ -843,11 +839,11 @@ class LambdaQueue:
         # A job-scoped request is keyed on the job, so that several jobs of the same task
         # can be enqueued at once and annotated one after another.
         rq_id = (
-            RequestId(
+            task_rq_id
+            if job is None
+            else RequestId(
                 action=RequestAction.AUTOANNOTATE, target=RequestTarget.JOB, target_id=job
             ).render()
-            if job
-            else task_rq_id
         )
 
         # Ensure that there is no race condition when processing parallel requests.
@@ -860,21 +856,25 @@ class LambdaQueue:
                 if LambdaJob(rq_job).is_active:
                     raise ValidationError(
                         "Only one running request is allowed for the same {}".format(
-                            "job #{}".format(job) if job else "task #{}".format(task)
+                            "task #{}".format(task) if job is None else "job #{}".format(job)
                         ),
                         code=status.HTTP_409_CONFLICT,
                     )
                 rq_job.delete()
 
-            if overlapping_job := self.find_overlapping_request(task=task, job=job):
-                raise ValidationError(
-                    (
+            # A task-scoped request covers every job of the task, so it must not run at the
+            # same time as a job-scoped one. Requests for two different jobs never overlap.
+            if job is None:
+                if overlapping_job := self.find_active_job_request(task):
+                    raise ValidationError(
                         "A request for job #{} of the same task is already in progress".format(
                             overlapping_job.get_job()
-                        )
-                        if job is None
-                        else "A request for the whole task #{} is already in progress".format(task)
-                    ),
+                        ),
+                        code=status.HTTP_409_CONFLICT,
+                    )
+            elif (task_rq_job := queue.fetch_job(task_rq_id)) and LambdaJob(task_rq_job).is_active:
+                raise ValidationError(
+                    "A request for the whole task #{} is already in progress".format(task),
                     code=status.HTTP_409_CONFLICT,
                 )
 
