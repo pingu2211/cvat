@@ -22,7 +22,7 @@ router.register("requests", views.RequestViewSet, basename="lambda_request")
 # { "function": "<id>", "mode": "online|offline", "job": "<jid>", "frame": "<n>",
 #   "points": [...], }
 # GET  /api/lambda/requests - get list of requests
-# GET  /api/lambda/requests/<int:rid> - get status of the request
-# POST /api/lambda/requests/<int:rid>/resume - continue a failed request
-# DEL  /api/lambda/requests/<int:rid> - cancel a request (don't delete)
+# GET  /api/lambda/requests/<str:rid> - get status of the request
+# POST /api/lambda/requests/<str:rid>/resume - continue a failed request
+# DEL  /api/lambda/requests/<str:rid> - cancel a request and drop it from the queue
 urlpatterns = [path("api/lambda/", include(router.urls))]

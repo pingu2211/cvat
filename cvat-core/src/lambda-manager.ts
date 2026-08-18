@@ -41,7 +41,7 @@ export interface FunctionRequestUpdate {
 }
 
 class LambdaManager {
-    private listening: Record<number, {
+    private listening: Record<string, {
         onUpdate: ((update: FunctionRequestUpdate) => void)[];
         timeout: number | null;
     }>;
