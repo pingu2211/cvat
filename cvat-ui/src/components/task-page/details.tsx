@@ -36,6 +36,9 @@ interface OwnProps {
     labelsEditorProps?: Record<string, unknown>;
 }
 
+// a shared constant, so that a task without requests keeps the same props
+const NO_INFERENCES: ActiveInference[] = [];
+
 interface StateToProps {
     activeInferences: ActiveInference[];
     project?: Project;
@@ -49,7 +52,7 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
     return {
         ...own,
-        activeInferences: state.models.inferences[own.task.id] ?? [],
+        activeInferences: state.models.inferences[own.task.id] ?? NO_INFERENCES,
         project: state.projects.current.find((project) => project.id === own.task.projectId),
     };
 }
