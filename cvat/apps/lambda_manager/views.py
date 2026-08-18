@@ -1131,9 +1131,7 @@ class LambdaJob:
         # leaves the failed ones as the only resumable ones.
         lambda_func = self.job.kwargs.get("function")
         return (
-            lambda_func is not None
-            and lambda_func.kind == FunctionKind.DETECTOR
-            and self.is_failed
+            lambda_func is not None and lambda_func.kind == FunctionKind.DETECTOR and self.is_failed
         )
 
     def delete(self):
