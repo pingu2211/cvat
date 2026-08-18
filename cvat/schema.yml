@@ -3658,6 +3658,39 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/lambda/requests/{id}/resume:
+    post:
+      operationId: lambda_resume_request
+      description: |
+        Continues an interrupted automatic annotation run from the frame its results
+        were last saved at, rather than running the whole scope again.
+
+        The parameters of the original run are reused, except that the existing
+        annotations are never removed, so that the recovered results are kept.
+      summary: Method resumes a failed request
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        description: Request id
+        required: true
+      tags:
+      - lambda
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/FunctionCall'
+          description: ''
   /api/memberships:
     get:
       operationId: memberships_list
@@ -8519,6 +8552,10 @@ components:
           type: integer
           nullable: true
           default: 0
+        resumable:
+          type: boolean
+          default: false
+          description: Whether the request can be continued from where it stopped
         enqueued:
           type: string
           format: date-time

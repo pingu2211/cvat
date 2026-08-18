@@ -5,7 +5,8 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { CloseOutlined, LoadingOutlined } from '@ant-design/icons';
+import { CloseOutlined, LoadingOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import Modal from 'antd/lib/modal';
@@ -17,10 +18,29 @@ import { ActiveInference } from 'reducers';
 interface Props {
     activeInference: ActiveInference | null;
     cancelAutoAnnotation(): void;
+    resumeAutoAnnotation(): void;
+}
+
+// a failed run is closed to get it out of the way rather than to stop it,
+// so it is worth saying what is given up by doing so
+function dismissConfirmation(activeInference: ActiveInference): { title: string, content: string } {
+    if (activeInference.status !== RQStatus.FAILED) {
+        return {
+            title: 'You are going to cancel automatic annotation?',
+            content: 'Reached progress will be lost. Continue?',
+        };
+    }
+
+    return {
+        title: 'You are going to dismiss automatic annotation?',
+        content: activeInference.resumable ?
+            'It will no longer be possible to resume it. Continue?' :
+            'It will be removed from the task. Continue?',
+    };
 }
 
 function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
-    const { activeInference, cancelAutoAnnotation } = props;
+    const { activeInference, cancelAutoAnnotation, resumeAutoAnnotation } = props;
     if (!activeInference) {
         return null;
     }
@@ -29,6 +49,8 @@ function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(activeInference.status)) {
         textType = 'danger';
     }
+
+    const failed = activeInference.status === RQStatus.FAILED;
 
     return (
         <Row justify='space-between' align='bottom'>
@@ -57,7 +79,7 @@ function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
                                 );
                             }
 
-                            if (activeInference.status === RQStatus.FAILED) {
+                            if (failed) {
                                 return (<>Automatic annotation failed</>);
                             }
 
@@ -68,6 +90,29 @@ function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
                             return <>Automatic annotation accomplished</>;
                         })()}
                     </Text>
+                    { failed && activeInference.resumable && (
+                        <Button
+                            className='cvat-resume-auto-annotation-button'
+                            type='link'
+                            size='small'
+                            icon={<PlayCircleOutlined />}
+                            onClick={() => {
+                                Modal.confirm({
+                                    title: 'You are going to resume automatic annotation?',
+                                    content: 'It will continue from the frame the results were ' +
+                                        'last saved at, and the existing annotations will be kept. Continue?',
+                                    okButtonProps: {
+                                        type: 'primary',
+                                    },
+                                    onOk() {
+                                        resumeAutoAnnotation();
+                                    },
+                                });
+                            }}
+                        >
+                            Resume
+                        </Button>
+                    )}
                 </div>
                 <Progress
                     percent={Math.floor(activeInference.progress)}
@@ -80,25 +125,22 @@ function AutomaticAnnotationProgress(props: Props): JSX.Element | null {
                 />
             </Col>
             <Col span={1} className='close-auto-annotation-icon'>
-                { activeInference.status !== RQStatus.FAILED && (
-                    <CVATTooltip title='Cancel automatic annotation'>
-                        <CloseOutlined
-                            onClick={() => {
-                                Modal.confirm({
-                                    title: 'You are going to cancel automatic annotation?',
-                                    content: 'Reached progress will be lost. Continue?',
-                                    okButtonProps: {
-                                        type: 'primary',
-                                        danger: true,
-                                    },
-                                    onOk() {
-                                        cancelAutoAnnotation();
-                                    },
-                                });
-                            }}
-                        />
-                    </CVATTooltip>
-                )}
+                <CVATTooltip title={failed ? 'Dismiss automatic annotation' : 'Cancel automatic annotation'}>
+                    <CloseOutlined
+                        onClick={() => {
+                            Modal.confirm({
+                                ...dismissConfirmation(activeInference),
+                                okButtonProps: {
+                                    type: 'primary',
+                                    danger: true,
+                                },
+                                onOk() {
+                                    cancelAutoAnnotation();
+                                },
+                            });
+                        }}
+                    />
+                </CVATTooltip>
             </Col>
         </Row>
     );

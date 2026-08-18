@@ -114,6 +114,7 @@ const defaultState: NotificationsState = {
             starting: null,
             fetching: null,
             canceling: null,
+            resuming: null,
             metaFetching: null,
             inferenceStatusFetching: null,
             creating: null,
@@ -1084,6 +1085,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.models,
                         canceling: {
                             message: `Could not cancel model inference for the [task #${taskID}](/tasks/${taskID})`,
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case ModelsActionTypes.RESUME_INFERENCE_FAILED: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        resuming: {
+                            message: `Could not resume model inference for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },

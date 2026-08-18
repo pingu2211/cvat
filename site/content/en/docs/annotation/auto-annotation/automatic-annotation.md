@@ -41,6 +41,21 @@ CVAT will show the progress of annotation on the progress bar.
 
 You can stop the automatic annotation at any moment by clicking cancel.
 
+## Resuming an interrupted run
+
+If a run stops before it finishes, for example because the model became unavailable
+part way through, the task shows **Automatic annotation failed** along with a
+**Resume** button.
+
+Resuming starts the run again from the frame the results were last saved at, so only
+the frames that have not been annotated yet are sent to the model. The annotations
+already in the task are kept, even if the original run was started with
+**Clean old annotations**.
+
+A failed run stays on the task, and can be resumed, for up to seven days. Dismissing
+it with the close icon removes it, after which the only way to annotate the remaining
+frames is to run the model again from the start.
+
 ## Limiting automatic annotation input to a region of interest
 
 For detector models in 2D tasks, you can restrict automatic annotation

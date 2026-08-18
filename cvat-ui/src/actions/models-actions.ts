@@ -30,6 +30,7 @@ export enum ModelsActionTypes {
     CLOSE_RUN_MODEL_DIALOG = 'CLOSE_RUN_MODEL_DIALOG',
     CANCEL_INFERENCE_SUCCESS = 'CANCEL_INFERENCE_SUCCESS',
     CANCEL_INFERENCE_FAILED = 'CANCEL_INFERENCE_FAILED',
+    RESUME_INFERENCE_FAILED = 'RESUME_INFERENCE_FAILED',
     GET_MODEL_PROVIDERS = 'GET_MODEL_PROVIDERS',
     GET_MODEL_PROVIDERS_SUCCESS = 'GET_MODEL_PROVIDERS_SUCCESS',
     GET_MODEL_PROVIDERS_FAILED = 'GET_MODEL_PROVIDERS_FAILED',
@@ -81,6 +82,12 @@ export const modelsActions = {
             error,
         })
     ),
+    resumeInferenceFailed: (taskID: number, error: any) => (
+        createAction(ModelsActionTypes.RESUME_INFERENCE_FAILED, {
+            taskID,
+            error,
+        })
+    ),
     closeRunModelDialog: () => createAction(ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG),
     showRunModelDialog: (taskInstance: any, jobID: number | null = null) => (
         createAction(ModelsActionTypes.SHOW_RUN_MODEL_DIALOG, {
@@ -121,7 +128,7 @@ function listen(
     dispatch: (action: ModelsActions) => void,
 ): void {
     const {
-        id, function: func, status, progress, exc_info: error,
+        id, function: func, status, progress, exc_info: error, resumable,
     } = functionRequest;
     const { task: taskID, id: functionID } = func;
 
@@ -132,11 +139,20 @@ function listen(
             functionID,
             error,
             id,
+            resumable,
         }),
     );
 
+    if (status === RQStatus.FAILED) {
+        // the run has already stopped, so there is nothing left to follow. It stays
+        // on the task card, where it can be resumed or dismissed
+        return;
+    }
+
     core.lambda
-        .listen(id, (_status: RQStatus, _progress: number, message?: string) => {
+        .listen(id, ({
+            status: _status, progress: _progress, message, resumable: _resumable,
+        }) => {
             if (_status === RQStatus.FAILED || _status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
@@ -147,6 +163,7 @@ function listen(
                             functionID,
                             error: message as string,
                             id,
+                            resumable: _resumable,
                         },
                         new Error(`Inference status for the task ${taskID} is ${_status}. ${message}`),
                     ),
@@ -162,6 +179,7 @@ function listen(
                     functionID,
                     error: message as string,
                     id,
+                    resumable: _resumable,
                 }),
             );
         })
@@ -174,6 +192,7 @@ function listen(
                     error: msg,
                     id,
                     functionID,
+                    resumable: false,
                 }, e instanceof Error ? e : new Error(msg)),
             );
         });
@@ -228,6 +247,24 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
             dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));
+        }
+    };
+}
+
+export function resumeInferenceAsync(taskID: number): ThunkAction {
+    return async (dispatch, getState): Promise<void> => {
+        try {
+            const inference = getState().models.inferences[taskID];
+            // the server knows how far the interrupted run got and what it was
+            // started with, so the new run needs no parameters of its own
+            const functionRequest = await core.lambda.resume(inference.id);
+
+            listen(functionRequest, (action: ModelsActions): void => {
+                dispatch(action);
+            });
+            dispatch(modelsActions.getInferencesSuccess({ [functionRequest.id]: true }));
+        } catch (error) {
+            dispatch(modelsActions.resumeInferenceFailed(taskID, error));
         }
     };
 }

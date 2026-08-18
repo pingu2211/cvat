@@ -68,6 +68,7 @@ class RQJobMetaField:
     # lambda fields
     LAMBDA = "lambda"
     FUNCTION_ID = "function_id"
+    LAST_SUBMITTED_FRAME = "last_submitted_frame"
 
 
 class WithMeta(Protocol):

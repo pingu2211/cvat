@@ -544,6 +544,8 @@ export interface ActiveInference {
     error: string;
     id: string;
     functionID: string | number;
+    // whether the run can be continued from the point it stopped at
+    resumable: boolean;
 }
 
 export interface ModelsState {
@@ -654,6 +656,7 @@ export interface NotificationsState {
             starting: null | ErrorState;
             fetching: null | ErrorState;
             canceling: null | ErrorState;
+            resuming: null | ErrorState;
             metaFetching: null | ErrorState;
             inferenceStatusFetching: null | ErrorState;
             creating: null | ErrorState;

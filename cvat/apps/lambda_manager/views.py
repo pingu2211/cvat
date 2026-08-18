@@ -36,6 +36,7 @@ from drf_spectacular.utils import (
 )
 from PIL import Image
 from rest_framework import serializers, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
@@ -772,18 +773,23 @@ class LambdaFunction:
 
 class LambdaQueue:
     RESULT_TTL = timedelta(minutes=30)
-    FAILED_TTL = timedelta(hours=3)
+    # A failed job carries the point its results were saved up to, which is what the
+    # resume action continues from. It therefore has to outlive a long run started in
+    # the evening and only noticed to have died the next morning.
+    FAILED_TTL = timedelta(days=7)
 
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
     def get_jobs(self):
         queue = self._get_queue()
-        # Only failed jobs are not included in the list below.
+        # Failed jobs are listed as well, so that a run that died part way stays
+        # visible, and resumable, until its failure TTL expires.
         job_ids = set(
             queue.get_job_ids()
             + queue.started_job_registry.get_job_ids()
             + queue.finished_job_registry.get_job_ids()
+            + queue.failed_job_registry.get_job_ids()
             + queue.scheduled_job_registry.get_job_ids()
             + queue.deferred_job_registry.get_job_ids()
         )
@@ -807,6 +813,7 @@ class LambdaQueue:
         roi: list | None = None,
         text_prompts: dict[str, str] | None = None,
         frames: Sequence[int] | None = None,
+        resume_from: int | None = None,
     ) -> LambdaJob:
         queue = self._get_queue()
         rq_id = RequestId(
@@ -858,6 +865,7 @@ class LambdaQueue:
                         "roi": roi,
                         "text_prompts": text_prompts,
                         "frames": frames,
+                        "resume_from": resume_from,
                     },
                     depends_on=define_dependent_job(queue, user_id),
                     result_ttl=self.RESULT_TTL.total_seconds(),
@@ -1062,6 +1070,7 @@ class LambdaJob:
             },
             "status": self.job.get_status(),
             "progress": LambdaRQMeta.for_job(self.job).progress,
+            "resumable": self.is_resumable,
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
@@ -1080,6 +1089,13 @@ class LambdaJob:
 
     def get_owner(self):
         return LambdaRQMeta.for_job(self.job).user
+
+    def get_function_id(self):
+        return LambdaRQMeta.for_job(self.job).function_id
+
+    def get_resume_point(self) -> int | None:
+        """The frame the results of this run were saved up to, if it got that far"""
+        return LambdaRQMeta.for_job(self.job).last_submitted_frame
 
     def get_status(self):
         return self.job.get_status()
@@ -1108,6 +1124,16 @@ class LambdaJob:
     def is_scheduled(self):
         return self.get_status() == rq.job.JobStatus.SCHEDULED
 
+    @property
+    def is_resumable(self):
+        # Only detector runs save their results as they go, so only they have a point
+        # to continue from. Cancelling a run deletes it along with that point, which
+        # leaves the failed ones as the only resumable ones.
+        lambda_func = self.job.kwargs.get("function")
+        return (
+            lambda_func is not None and lambda_func.kind == FunctionKind.DETECTOR and self.is_failed
+        )
+
     def delete(self):
         self.job.delete()
 
@@ -1124,12 +1150,23 @@ class LambdaJob:
         roi: list | None = None,
         text_prompts: dict[str, str] | None = None,
         frames: Sequence[int] | None = None,
+        resume_from: int | None = None,
     ):
         collector = DetectionResultCollector(db_task, db_job)
 
         converter = DetectionResultConverter(db_task)
 
-        frame_set = cls._get_frame_set(db_task, db_job, frames=frames)
+        frame_set = cls._get_frame_set(db_task, db_job, frames=frames, resume_from=resume_from)
+
+        # The frame the collected results reach up to. It lags behind the reported
+        # progress, because results are only submitted every 100 frames, so it is
+        # the only point a later run may safely be resumed from.
+        collected_up_to = resume_from
+        if collected_up_to is not None:
+            # Carry the resume point of this run over right away, so that if this run
+            # fails again before submitting anything, the next resume continues from
+            # here instead of starting the whole scope over.
+            cls._update_last_submitted_frame(collected_up_to)
 
         for processed_frame_count, frame in enumerate(frame_set, start=1):
             if frame in db_task.data.deleted_frames:
@@ -1156,14 +1193,26 @@ class LambdaJob:
                 break
 
             collector.add(annotations)
+            collected_up_to = frame
 
             # Accumulate data during 100 frames before submitting results.
             # It is optimization to make fewer calls to our server. Also
             # it isn't possible to keep all results in memory.
             if frame and frame % 100 == 0:
                 collector.submit()
+                # Recorded after the results themselves, so that a failure in between
+                # only makes a resumed run repeat the batch instead of skipping it
+                cls._update_last_submitted_frame(collected_up_to)
 
         collector.submit()
+        if collected_up_to is not None:
+            cls._update_last_submitted_frame(collected_up_to)
+
+    @staticmethod
+    def _update_last_submitted_frame(frame: int) -> None:
+        rq_job_meta = LambdaRQMeta.for_job(rq.get_current_job())
+        rq_job_meta.last_submitted_frame = frame
+        rq_job_meta.save()
 
     @staticmethod
     # progress is in [0, 1] range
@@ -1179,7 +1228,12 @@ class LambdaJob:
 
     @classmethod
     def _get_frame_set(
-        cls, db_task: Task, db_job: Job | None, *, frames: Sequence[int] | None = None
+        cls,
+        db_task: Task,
+        db_job: Job | None,
+        *,
+        frames: Sequence[int] | None = None,
+        resume_from: int | None = None,
     ):
         if db_job:
             task_data = db_task.data
@@ -1196,6 +1250,12 @@ class LambdaJob:
             # e.g. only the frames that have just been appended to the task
             requested_frames = set(frames)
             frame_set = [frame for frame in frame_set if frame in requested_frames]
+
+        if resume_from is not None:
+            # Continue an interrupted run right after the frame its results were saved
+            # up to. Every branch above yields the frames in ascending order, so that
+            # single frame is enough to tell what is already annotated
+            frame_set = [frame for frame in frame_set if frame > resume_from]
 
         return frame_set
 
@@ -1333,6 +1393,7 @@ class LambdaJob:
                 roi=kwargs.get("roi"),
                 text_prompts=kwargs.get("text_prompts"),
                 frames=kwargs.get("frames"),
+                resume_from=kwargs.get("resume_from"),
             )
         elif function.kind == FunctionKind.REID:
             cls._call_reid(
@@ -1623,6 +1684,85 @@ class RequestViewSet(viewsets.ViewSet):
         self.check_object_permissions(request, rq_job)
 
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
+        return response_serializer.data
+
+    @extend_schema(
+        operation_id="lambda_resume_request",
+        summary="Method resumes a failed request",
+        description=textwrap.dedent("""\
+            Continues an interrupted automatic annotation run from the frame its results
+            were last saved at, rather than running the whole scope again.
+
+            The parameters of the original run are reused, except that the existing
+            annotations are never removed, so that the recovered results are kept.
+        """),
+        parameters=[
+            OpenApiParameter(
+                "id",
+                location=OpenApiParameter.PATH,
+                type=OpenApiTypes.STR,
+                description="Request id",
+            ),
+        ],
+        request=None,
+        responses={"200": FunctionCallSerializer},
+    )
+    @action(detail=True, methods=["POST"])
+    @return_response()
+    def resume(self, request: ExtendedRequest, pk: str):
+        queue = LambdaQueue()
+        rq_job = queue.fetch_job(pk)
+        self.check_object_permissions(request, rq_job)
+
+        if not rq_job.is_failed:
+            raise ValidationError(
+                "Only a failed request can be resumed", code=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Everything the original run was started with is kept in the queued job, so
+        # the client does not have to know, or send back, any of it
+        parameters = rq_job.job.kwargs
+        resume_from = rq_job.get_resume_point()
+        task = parameters["task"]
+        job = parameters.get("job")
+
+        db_task = Task.objects.get(pk=task)
+        ensure_task_is_initialized(task=db_task)
+
+        gateway = LambdaGateway()
+        # The function is looked up again instead of being reused from the failed job,
+        # because it may well have been redeployed in the meantime - which is a common
+        # reason for a run to be interrupted in the first place
+        lambda_func = gateway.get(rq_job.get_function_id())
+        if lambda_func.kind != FunctionKind.DETECTOR:
+            raise ValidationError(
+                "Only requests of detector functions can be resumed",
+                code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_rq_job = queue.enqueue(
+            lambda_func,
+            parameters.get("threshold"),
+            task,
+            parameters.get("mapping"),
+            # The original run may have been started with a cleanup, which removes the
+            # existing annotations of the scope. Doing that again on a resume would
+            # wipe exactly the results that are being recovered.
+            False,
+            parameters.get("conv_mask_to_poly"),
+            parameters.get("max_distance"),
+            user=request.user,
+            request_uuid=request.uuid,
+            job=job,
+            roi=parameters.get("roi"),
+            text_prompts=parameters.get("text_prompts"),
+            frames=parameters.get("frames"),
+            resume_from=resume_from,
+        )
+
+        handle_function_call(lambda_func.id, job or task, category="batch")
+
+        response_serializer = FunctionCallSerializer(new_rq_job.to_dict())
         return response_serializer.data
 
     @return_response(status.HTTP_204_NO_CONTENT)
